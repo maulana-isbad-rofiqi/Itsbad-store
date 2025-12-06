@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Itsbad Store V11</title>
+  <title>Itsbad Store</title>
   
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081559.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,6 +18,8 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     #qrContainer img { margin: 0 auto; border: 8px solid white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 100%; }
     .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .modal-enter { animation: modalIn 0.3s ease-out forwards; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
   </style>
 </head>
 <body class="flex justify-center min-h-screen text-slate-800">
@@ -115,9 +117,9 @@
                 <p class="text-xs text-slate-400">Ketuk kamera untuk ubah foto</p>
             </div>
             <div class="space-y-5">
-                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nama Lengkap</label><input type="text" id="profName" class="w-full p-4 border rounded-2xl text-sm bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition" placeholder="Nama Anda"></div>
-                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nomor WhatsApp</label><input type="tel" id="profWa" class="w-full p-4 border rounded-2xl text-sm bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition" placeholder="08xxxxxxxx"></div>
-                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Alamat Pengiriman</label><textarea id="profAddress" rows="3" class="w-full p-4 border rounded-2xl text-sm bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition" placeholder="Alamat lengkap..."></textarea></div>
+                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nama Lengkap</label><input type="text" id="profName" class="w-full p-4 border rounded-2xl text-sm" placeholder="Nama Anda"></div>
+                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nomor WhatsApp</label><input type="tel" id="profWa" class="w-full p-4 border rounded-2xl text-sm" placeholder="08xxxxxxxx"></div>
+                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Alamat Pengiriman</label><textarea id="profAddress" rows="3" class="w-full p-4 border rounded-2xl text-sm" placeholder="Alamat lengkap..."></textarea></div>
                 <button onclick="window.saveProfile()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold mt-4 shadow-xl hover:bg-slate-800 transition">SIMPAN PROFIL</button>
             </div>
         </div>
@@ -201,7 +203,7 @@
                 <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                     <p class="text-xs font-bold text-indigo-800 mb-2 uppercase">QRIS Database (Wajib)</p>
                     <div class="bg-yellow-50 text-yellow-700 text-[10px] p-2 rounded mb-2 border border-yellow-200">
-                        <i class="fas fa-info-circle"></i> Sistem akan otomatis mengompres foto agar bisa tersimpan di Database.
+                        <i class="fas fa-info-circle"></i> Sistem akan otomatis mengompres foto agar bisa tersimpan.
                     </div>
                     <input type="file" id="qrisUpload" class="text-xs w-full mb-2 text-indigo-600" accept="image/*">
                     <textarea id="setQris" class="w-full p-2 text-[10px] bg-white rounded border text-slate-400 font-mono h-16" rows="2" readonly placeholder="Data QRIS akan muncul disini..."></textarea>
@@ -239,7 +241,7 @@
     import { getDatabase, ref, set, get, child, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // --- CONFIG FIREBASE ---
+    // --- CONFIG FIREBASE ASLI (FIXED) ---
     const firebaseConfig = {
       apiKey: "AIzaSyAUL2WkPlJLb8wHcSKQ_QA7GSZ5DGw94Ng",
       authDomain: "kasir-online-c22bd.firebaseapp.com",
@@ -256,7 +258,7 @@
 
     toastr.options = { "positionClass": "toast-top-center", "timeOut": "2000" };
     let db, auth, user;
-    let storeData = { name: "Itsbad Store", fee: 0, products: [], qris: "" };
+    let storeData = { name: "Itsbad Store", fee: 0, products: [], qris: "", qrisType: "static" };
     let cart = JSON.parse(localStorage.getItem('myCart')) || [];
     let userData = { name: "", wa: "", address: "", avatar: "" };
     let grandTotal = 0;
@@ -318,13 +320,23 @@
     document.getElementById('avatarUpload').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if(!file) return;
-        // COMPRESS AVATAR
+        
+        // Kompres Foto Profil (Resizer)
         const reader = new FileReader();
         reader.onload = (ev) => {
-            resizeImage(ev.target.result, 200, (resized) => { // Compress to 200px
-                userData.avatar = resized;
+            const img = new Image();
+            img.src = ev.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxWidth = 300; // Resize ke 300px lebar
+                const scaleSize = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                userData.avatar = canvas.toDataURL('image/jpeg', 0.7); // Kompres kualitas 70%
                 updateProfileUI();
-            });
+            }
         };
         reader.readAsDataURL(file);
     });
@@ -365,7 +377,7 @@
         updateCartBadge();
     }
 
-    // --- CART ---
+    // --- CART LOGIC ---
     window.openProductDetail = (index) => {
         const p = storeData.products[index];
         document.getElementById('modalProdName').innerText = p.name;
@@ -451,7 +463,7 @@
         document.getElementById('cartTotal').innerText = "Rp " + (subtotal + fee).toLocaleString();
     }
 
-    // --- CHECKOUT ---
+    // --- CHECKOUT & QRIS ---
     window.processCheckout = () => {
         if(cart.length === 0) return toastr.warning("Keranjang kosong!");
         window.toggleCart();
@@ -486,12 +498,12 @@
 
     window.sendOrder = () => {
         const file = document.getElementById('proofFile').files[0];
-        if(!file) return toastr.warning("Wajib upload bukti transfer!");
+        if(!file) return toastr.warning("Upload bukti transfer!");
 
         let itemsList = "";
         cart.forEach(c => { itemsList += `▪️ ${c.name} (${c.qty}x) - Rp ${(c.qty*c.price).toLocaleString()}\n`; });
         const fee = parseInt(storeData.fee || 0);
-        const msg = `*ORDER BARU V11*\n────────────────\n👤 ${userData.name}\n📱 ${userData.wa || '-'}\n📍 ${userData.address || '-'}\n\n*Pesanan:*\n${itemsList}\nLayanan: Rp ${fee.toLocaleString()}\n*TOTAL: Rp ${grandTotal.toLocaleString()}*\nMetode: QRIS\n────────────────\nUser melampirkan bukti transfer.`;
+        const msg = `*ORDER BARU V12*\n────────────────\n👤 ${userData.name}\n📱 ${userData.wa || '-'}\n📍 ${userData.address || '-'}\n\n*Pesanan:*\n${itemsList}\nLayanan: Rp ${fee.toLocaleString()}\n*TOTAL: Rp ${grandTotal.toLocaleString()}*\nMetode: QRIS\n────────────────\nUser melampirkan bukti transfer.`;
         window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(msg)}`, '_blank');
         
         cart = []; saveCart(); location.reload();
@@ -500,7 +512,7 @@
     // --- QRIS HYBRID & COMPRESSOR ---
     
     // 1. Image Compressor
-    function resizeImage(base64Str, maxWidth = 400, callback) {
+    function resizeImage(base64Str, maxWidth, callback) {
         const img = new Image();
         img.src = base64Str;
         img.onload = () => {
@@ -600,14 +612,15 @@
         return crc.toString(16).toUpperCase().padStart(4, '0');
     }
 
-    // --- ADMIN ---
+    // --- ADMIN PANEL ---
+    window.openAdmin = () => document.getElementById('adminPanel').classList.remove('hidden');
     window.loginAdmin = () => {
         if(document.getElementById('adminPin').value === "110603") {
             document.getElementById('adminLoginForm').classList.add('hidden');
             document.getElementById('adminContent').classList.remove('hidden');
             loadAdminData();
         } else toastr.error("PIN Salah");
-    }
+    };
 
     function loadAdminData() {
         document.getElementById('setStoreName').value = storeData.name;
@@ -667,7 +680,7 @@
         }
     }
 
-    // Expose
+    // Expose Global
     window.toggleCart = window.toggleCart;
     window.addToCart = window.addToCart;
     window.updateQty = window.updateQty;
