@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Itsbad Store</title>
+  <title>Itsbad Store V11</title>
   
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081559.png" type="image/png">
-
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
@@ -19,8 +18,6 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     #qrContainer img { margin: 0 auto; border: 8px solid white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 100%; }
     .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); }
-    .modal-enter { animation: modalIn 0.3s ease-out forwards; }
-    @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
   </style>
 </head>
 <body class="flex justify-center min-h-screen text-slate-800">
@@ -157,7 +154,9 @@
 
             <div class="bg-white border-2 border-slate-100 p-6 rounded-3xl mb-8 shadow-sm relative">
                 <p class="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">Scan QR Code</p>
-                <div id="qrContainer" class="flex justify-center min-h-[220px] items-center"></div>
+                <div id="qrContainer" class="flex justify-center min-h-[220px] items-center">
+                    <p class="text-slate-400 text-sm">Menunggu data QRIS...</p>
+                </div>
                 <div class="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500 bg-slate-50 py-2 rounded-lg">
                     <span id="qrNote">Memuat QRIS...</span>
                 </div>
@@ -202,7 +201,7 @@
                 <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
                     <p class="text-xs font-bold text-indigo-800 mb-2 uppercase">QRIS Database (Wajib)</p>
                     <div class="bg-yellow-50 text-yellow-700 text-[10px] p-2 rounded mb-2 border border-yellow-200">
-                        <i class="fas fa-info-circle"></i> Upload QRIS Anda. Foto akan otomatis dikompres agar bisa tersimpan.
+                        <i class="fas fa-info-circle"></i> Sistem akan otomatis mengompres foto agar bisa tersimpan di Database.
                     </div>
                     <input type="file" id="qrisUpload" class="text-xs w-full mb-2 text-indigo-600" accept="image/*">
                     <textarea id="setQris" class="w-full p-2 text-[10px] bg-white rounded border text-slate-400 font-mono h-16" rows="2" readonly placeholder="Data QRIS akan muncul disini..."></textarea>
@@ -240,7 +239,7 @@
     import { getDatabase, ref, set, get, child, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // --- CONFIG FIREBASE ASLI ---
+    // --- CONFIG FIREBASE ---
     const firebaseConfig = {
       apiKey: "AIzaSyAUL2WkPlJLb8wHcSKQ_QA7GSZ5DGw94Ng",
       authDomain: "kasir-online-c22bd.firebaseapp.com",
@@ -284,7 +283,7 @@
         });
     } catch(e) { alert("Firebase Error: " + e.message); }
 
-    // --- USER ---
+    // --- USER PROFILE ---
     async function loadUserProfile(uid) {
         try {
             const snap = await get(child(ref(db), `users/${uid}`));
@@ -319,28 +318,18 @@
     document.getElementById('avatarUpload').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if(!file) return;
-        
-        // Kompres Foto Profil (Resizer)
+        // COMPRESS AVATAR
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const img = new Image();
-            img.src = ev.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const maxWidth = 300; // Resize ke 300px lebar
-                const scaleSize = maxWidth / img.width;
-                canvas.width = maxWidth;
-                canvas.height = img.height * scaleSize;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                userData.avatar = canvas.toDataURL('image/jpeg', 0.7); // Kompres kualitas 70%
+            resizeImage(ev.target.result, 200, (resized) => { // Compress to 200px
+                userData.avatar = resized;
                 updateProfileUI();
-            }
+            });
         };
         reader.readAsDataURL(file);
     });
 
-    // --- STORE ---
+    // --- STORE DATA ---
     async function initStore() {
         try {
             const snap = await get(child(ref(db), `stores/${STORE_ID}`));
@@ -376,7 +365,7 @@
         updateCartBadge();
     }
 
-    // --- CART & MODALS ---
+    // --- CART ---
     window.openProductDetail = (index) => {
         const p = storeData.products[index];
         document.getElementById('modalProdName').innerText = p.name;
@@ -502,13 +491,66 @@
         let itemsList = "";
         cart.forEach(c => { itemsList += `▪️ ${c.name} (${c.qty}x) - Rp ${(c.qty*c.price).toLocaleString()}\n`; });
         const fee = parseInt(storeData.fee || 0);
-        const msg = `*ORDER BARU V9*\n────────────────\n👤 ${userData.name}\n📱 ${userData.wa || '-'}\n📍 ${userData.address || '-'}\n\n*Pesanan:*\n${itemsList}\nLayanan: Rp ${fee.toLocaleString()}\n*TOTAL: Rp ${grandTotal.toLocaleString()}*\nMetode: QRIS\n────────────────\nUser melampirkan bukti transfer.`;
+        const msg = `*ORDER BARU V11*\n────────────────\n👤 ${userData.name}\n📱 ${userData.wa || '-'}\n📍 ${userData.address || '-'}\n\n*Pesanan:*\n${itemsList}\nLayanan: Rp ${fee.toLocaleString()}\n*TOTAL: Rp ${grandTotal.toLocaleString()}*\nMetode: QRIS\n────────────────\nUser melampirkan bukti transfer.`;
         window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(msg)}`, '_blank');
         
         cart = []; saveCart(); location.reload();
     };
 
-    // --- QR GENERATOR (HYBRID MODE V9) ---
+    // --- QRIS HYBRID & COMPRESSOR ---
+    
+    // 1. Image Compressor
+    function resizeImage(base64Str, maxWidth = 400, callback) {
+        const img = new Image();
+        img.src = base64Str;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ratio = maxWidth / img.width;
+            canvas.width = maxWidth;
+            canvas.height = img.height * ratio;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            callback(canvas.toDataURL('image/jpeg', 0.6)); // Compress Quality 60%
+        };
+    }
+
+    // 2. Upload Handler
+    document.getElementById('qrisUpload').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        toastr.info("Memproses...");
+        
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            // A. Try Scan QR String first (Dynamic)
+            const img = new Image();
+            img.src = ev.target.result;
+            img.onload = () => {
+                const cvs = document.createElement("canvas");
+                cvs.width = img.width; cvs.height = img.height;
+                const ctx = cvs.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0,0,cvs.width,cvs.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if(code) {
+                    storeData.qris = code.data;
+                    document.getElementById('setQris').value = "Berhasil Scan: String QRIS";
+                    toastr.success("QRIS Terbaca (Mode Dinamis)");
+                } else {
+                    // B. Failed Scan? Resize & Save as Image (Static)
+                    resizeImage(ev.target.result, 400, (resized) => {
+                        storeData.qris = resized;
+                        document.getElementById('setQris').value = "Berhasil: Image Base64 (Mode Statis)";
+                        toastr.warning("QR tak terbaca. Disimpan sbg Gambar.");
+                    });
+                }
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 3. Generate Display
     function generateQR(amount) {
         const container = document.getElementById('qrContainer');
         container.innerHTML = "";
@@ -519,24 +561,22 @@
             return;
         }
 
-        // Cek apakah string (Dynamic) atau Image Base64 (Static)
         if(qrisData.startsWith('data:image')) {
-            // Mode Gambar Static (Personal)
+            // Mode Gambar Statis
             const img = document.createElement('img');
             img.src = qrisData;
             img.style.maxWidth = '100%';
-            img.style.maxHeight = '200px';
+            img.style.maxHeight = '220px';
             container.appendChild(img);
             document.getElementById('qrNote').innerHTML = "<i class='fas fa-info-circle text-orange-500'></i> Input nominal manual";
         } else {
-            // Mode Dynamic String (Bisnis)
+            // Mode Dinamis String
             try {
                 const finalString = injectAmount(qrisData, amount);
                 new QRCode(container, { text: finalString, width: 200, height: 200, colorDark : "#1e293b", colorLight : "#ffffff" });
                 document.getElementById('qrNote').innerHTML = "<i class='fas fa-check-circle text-green-500'></i> Nominal otomatis masuk";
             } catch(e) {
-                // Fallback kalau inject gagal
-                container.innerHTML = "QR Error. Hubungi Admin.";
+                container.innerHTML = "Error QR";
             }
         }
     }
@@ -572,7 +612,7 @@
     function loadAdminData() {
         document.getElementById('setStoreName').value = storeData.name;
         document.getElementById('setFee').value = storeData.fee;
-        document.getElementById('setQris').value = storeData.qris ? "QRIS Tersimpan (String/Image)" : "";
+        document.getElementById('setQris').value = storeData.qris ? "Data QRIS Tersimpan" : "";
         renderAdminList();
     }
 
@@ -588,56 +628,24 @@
     }
 
     window.saveSettings = async () => {
-        storeData.name = document.getElementById('setStoreName').value;
-        storeData.fee = parseInt(document.getElementById('setFee').value) || 0;
-        // QRIS disimpan langsung saat upload, jadi update sisanya
-        await update(ref(db, `stores/${STORE_ID}`), storeData);
-        toastr.success("Tersimpan!");
-        location.reload();
-    }
-
-    // --- QRIS UPLOAD (RESIZER FIX) ---
-    document.getElementById('qrisUpload').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        toastr.info("Memproses...");
+        const btn = document.querySelector('button[onclick="window.saveSettings()"]');
+        btn.innerText = "Menyimpan...";
+        btn.disabled = true;
         
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            // 1. Coba Baca Kode (Dynamic)
-            const img = new Image();
-            img.src = ev.target.result;
-            img.onload = () => {
-                const cvs = document.createElement("canvas");
-                cvs.width = img.width; cvs.height = img.height;
-                const ctx = cvs.getContext("2d");
-                ctx.drawImage(img, 0, 0);
-                const imageData = ctx.getImageData(0,0,cvs.width,cvs.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height);
-                
-                if(code) {
-                    storeData.qris = code.data;
-                    document.getElementById('setQris').value = "Berhasil: QR Code String (Dynamic Mode)";
-                    toastr.success("QRIS Terbaca (Mode Dinamis)");
-                } else {
-                    // 2. Gagal Baca? Kompres Jadi Gambar (Static)
-                    // RESIZE IMAGE SUPAYA MUAT DI FIREBASE (Max 500px lebar)
-                    const maxWidth = 500;
-                    const scaleSize = maxWidth / img.width;
-                    const canvas = document.createElement("canvas");
-                    canvas.width = maxWidth;
-                    canvas.height = img.height * scaleSize;
-                    const ctx2 = canvas.getContext("2d");
-                    ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    storeData.qris = canvas.toDataURL("image/jpeg", 0.7); // Kompres 70%
-                    document.getElementById('setQris').value = "Berhasil: Image Data Saved (Mode Statis)";
-                    toastr.warning("QR tak terbaca. Disimpan sebagai gambar.");
-                }
-            };
-        };
-        reader.readAsDataURL(file);
-    });
+        try {
+            storeData.name = document.getElementById('setStoreName').value;
+            storeData.fee = parseInt(document.getElementById('setFee').value) || 0;
+            // qris is already updated in memory via upload listener
+            
+            await update(ref(db, `stores/${STORE_ID}`), storeData);
+            toastr.success("Tersimpan!");
+            location.reload();
+        } catch(e) {
+            alert("Gagal Simpan (Payload terlalu besar?). Coba foto QRIS yang lebih kecil.");
+            btn.innerText = "SIMPAN PENGATURAN";
+            btn.disabled = false;
+        }
+    }
 
     window.addProduct = async () => {
         storeData.products.push({
@@ -659,7 +667,7 @@
         }
     }
 
-    // Expose Global
+    // Expose
     window.toggleCart = window.toggleCart;
     window.addToCart = window.addToCart;
     window.updateQty = window.updateQty;
