@@ -174,7 +174,7 @@
                     <span class="text-sm text-slate-500">Total + Fee</span>
                     <span class="text-xl font-bold text-blue-600" id="cartTotalDisplay">Rp 0</span>
                 </div>
-                <button onclick="window.initPayment()" class="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-lg">Lanjut Pembayaran</button>
+                <button onclick="window.initPayment()" id="btnCheckout" class="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-lg disabled:bg-slate-300 disabled:text-slate-500">Lanjut Pembayaran</button>
             </div>
         </div>
     </div>
@@ -370,7 +370,6 @@
 
     // --- DYNAMIC CATEGORIES & PRODUCTS ---
     function renderCategories() {
-        // Extract Unique Categories
         const cats = ['all'];
         if(storeData.products) {
             storeData.products.forEach(p => {
@@ -391,7 +390,7 @@
 
     window.filterCat = (c) => {
         activeCategory = c;
-        renderCategories(); // Re-render to update active state
+        renderCategories(); 
         renderProducts();
     };
 
@@ -406,12 +405,10 @@
         
         let filtered = storeData.products;
 
-        // Filter by Category
         if(activeCategory !== 'all') {
             filtered = filtered.filter(p => (p.category || 'Umum') === activeCategory);
         }
 
-        // Filter by Search
         if(query) {
             filtered = filtered.filter(p => p.name.toLowerCase().includes(query));
         }
@@ -422,7 +419,6 @@
         }
 
         filtered.forEach((p) => {
-            // Find original index for adding to cart
             const originalIdx = storeData.products.indexOf(p);
             const hasStock = parseInt(p.stock) > 0;
             const img = p.image || `https://placehold.co/200x200/e2e8f0/94a3b8?text=${p.name.charAt(0)}`;
@@ -508,16 +504,36 @@
     window.openCart = () => { window.switchTab('cart'); renderCartList(); document.getElementById('cartModal').classList.remove('hidden'); };
     window.closeCart = () => { document.getElementById('cartModal').classList.add('hidden'); window.switchTab('home'); };
 
+    // --- REVISI LOGIC KERANJANG (FIX NaN & FEE) ---
     function renderCartList() {
-        const l = document.getElementById('cartList'); l.innerHTML = ""; let tot = 0;
-        if(cart.length===0) l.innerHTML = `<div class="text-center text-xs text-slate-400 py-10">Keranjang Kosong</div>`;
+        const l = document.getElementById('cartList'); 
+        l.innerHTML = ""; 
+        let tot = 0;
+        
+        const btn = document.getElementById('btnCheckout');
+
+        // Jika Keranjang Kosong
+        if(cart.length === 0) {
+            l.innerHTML = `<div class="text-center text-xs text-slate-400 py-10">Keranjang Kosong</div>`;
+            document.getElementById('cartTotalDisplay').innerText = "Rp 0";
+            btn.disabled = true; // Disable tombol bayar
+            return;
+        }
+
+        btn.disabled = false; // Enable tombol bayar
+
         cart.forEach((c, i) => {
-            tot += c.price * c.qty;
+            const itemTotal = (c.price || 0) * (c.qty || 0);
+            tot += itemTotal;
             l.innerHTML += `<div class="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl"><div><h4 class="font-bold text-xs text-slate-700">${c.name}</h4><p class="text-xs text-blue-600 font-bold">Rp ${c.price.toLocaleString()}</p></div><div class="flex items-center gap-3 bg-slate-50 rounded-lg px-2 py-1"><button onclick="window.modQty(${i},-1)" class="w-5 font-bold">-</button><span class="text-xs font-bold w-3 text-center">${c.qty}</span><button onclick="window.modQty(${i},1)" class="w-5 font-bold">+</button></div></div>`;
         });
-        const fee = parseInt(storeData.fee||0);
-        document.getElementById('cartTotalDisplay').innerText = "Rp " + (tot+fee).toLocaleString();
+
+        // Validasi Fee
+        const fee = parseInt(storeData.fee) || 0; 
+        const finalTotal = tot + fee;
+        document.getElementById('cartTotalDisplay').innerText = "Rp " + finalTotal.toLocaleString();
     }
+
     window.modQty = (i, d) => { cart[i].qty+=d; if(cart[i].qty<=0)cart.splice(i,1); saveCart(); renderCartList(); };
 
     // --- CHECKOUT ---
@@ -526,7 +542,10 @@
         const note = document.getElementById('orderNote').value;
         if(!note) return toastr.warning("Wajib isi Catatan/No.HP!");
         
-        const sub = cart.reduce((a,b)=>a+b.qty*b.price,0); const fee=parseInt(storeData.fee||0); const tot=sub+fee;
+        const sub = cart.reduce((a,b)=>a+b.qty*b.price,0); 
+        const fee = parseInt(storeData.fee) || 0; 
+        const tot = sub + fee;
+        
         document.getElementById('payAmountDisplay').innerText="Rp "+tot.toLocaleString();
         
         const c = document.getElementById('qrContainer'); c.innerHTML=""; let q = storeData.qris;
@@ -548,11 +567,14 @@
     // --- RECEIPT ---
     window.generateReceipt = async () => {
         const note = document.getElementById('orderNote').value;
-        const sub = cart.reduce((a,b)=>a+b.qty*b.price,0); const fee=parseInt(storeData.fee||0); const tot=sub+fee;
+        const sub = cart.reduce((a,b)=>a+b.qty*b.price,0); 
+        const fee = parseInt(storeData.fee) || 0;
+        const tot = sub + fee;
         const date = new Date().toLocaleString('id-ID');
 
         if(user) {
-            try { await push(ref(db,`orders/${user.uid}`), { items:cart, total:tot, note, date:Date.now() }); } catch(e){}
+            // FIX: Ensure no NaN is saved
+            try { await push(ref(db,`orders/${user.uid}`), { items:cart, total:tot || 0, note, date:Date.now() }); } catch(e){}
         }
 
         document.getElementById('recStoreName').innerText = storeData.name;
@@ -605,7 +627,8 @@
             if(hs.exists()) {
                 const h = document.getElementById('historyList'); h.innerHTML="";
                 Object.values(hs.val()).reverse().slice(0,3).forEach(o => {
-                    h.innerHTML += `<div class="text-[10px] bg-slate-50 p-2 rounded flex justify-between"><span>${new Date(o.date).toLocaleDateString()}</span><span class="font-bold">Rp ${o.total.toLocaleString()}</span></div>`;
+                    const safeTotal = parseInt(o.total) || 0; // Fix NaN History
+                    h.innerHTML += `<div class="text-[10px] bg-slate-50 p-2 rounded flex justify-between"><span>${new Date(o.date).toLocaleDateString()}</span><span class="font-bold">Rp ${safeTotal.toLocaleString()}</span></div>`;
                 });
             }
         } catch(e){}
