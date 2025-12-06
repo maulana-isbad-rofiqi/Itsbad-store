@@ -80,6 +80,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800">
 
+  <!-- LOGIN MODAL (Muncul Pertama) -->
   <div id="loginModal" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-5">
     <div class="text-center mb-8">
       <div class="w-24 h-24 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
@@ -113,6 +114,85 @@
     
     <div class="absolute bottom-6 left-0 right-0 text-center">
       <p class="text-xs text-slate-400">© 2024 Itsbad Store. All rights reserved.</p>
+    </div>
+  </div>
+
+  <!-- ADMIN LOGIN MODAL (Modified) -->
+  <div id="adminLoginModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900 bg-opacity-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-4">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800">Admin Access</h2>
+        <p class="text-gray-600 mt-2">Masukkan PIN Admin untuk melanjutkan</p>
+      </div>
+
+      <!-- Form Login -->
+      <form id="pinForm" class="space-y-6">
+        <!-- PIN Input -->
+        <div>
+          <label for="adminPin" class="block text-sm font-medium text-gray-700 mb-2">PIN Admin</label>
+          <div class="relative">
+            <input
+              type="password"
+              id="adminPin"
+              maxlength="6"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-center text-2xl tracking-widest font-mono"
+              placeholder="••••••"
+              autocomplete="off"
+              required
+            />
+            <button type="button" id="togglePin" class="absolute right-3 top-3 text-gray-500 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">PIN terdiri dari 6 digit angka</p>
+        </div>
+
+        <!-- Login Info -->
+        <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+          <div class="flex items-start">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="text-sm text-blue-700">Anda harus sudah login dengan akun Google <strong>isbadd84@gmail.com</strong> untuk mengakses panel admin</span>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex space-x-3">
+          <button
+            type="button"
+            onclick="closeAdminLogin()"
+            class="flex-1 py-3 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
+          >
+            Batal
+          </button>
+          <button
+            type="submit"
+            class="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Buka Panel
+          </button>
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="mt-6 pt-6 border-t border-gray-200">
+        <div class="flex items-center justify-center text-sm text-gray-500">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          Akses Terbatas • Admin Only
+        </div>
+      </div>
     </div>
   </div>
 
@@ -274,19 +354,11 @@
     <div id="adminModal" class="fixed inset-0 z-[90] hidden bg-slate-100 overflow-y-auto">
         <div class="sticky top-0 bg-white p-4 shadow-sm flex justify-between items-center">
             <h2 class="font-bold">Admin Panel</h2>
-            <button onclick="document.getElementById('adminModal').classList.add('hidden')" class="text-red-500 text-xs font-bold hover:text-red-600">Tutup</button>
+            <button onclick="closeAdminPanel()" class="text-red-500 text-xs font-bold hover:text-red-600">Tutup</button>
         </div>
         <div class="p-5" id="adminContent">
-            <div id="adminLogin" class="text-center mt-10 space-y-3 px-4">
-                <div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                    <i class="fas fa-user-lock text-slate-400 text-xl"></i>
-                </div>
-                <p class="text-xs text-slate-500 mb-2">Area Terbatas (Login Google Dulu)</p>
-                <input type="password" id="adminPinInput" class="w-full border border-slate-300 px-4 py-3 rounded-xl text-center text-sm focus:outline-none focus:border-slate-900 transition-colors" placeholder="Masukkan PIN">
-                <button onclick="checkAdmin()" class="w-full bg-slate-900 text-white py-3 rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 active:scale-95 transition-all">BUKA PANEL</button>
-            </div>
-
-            <div id="adminDash" class="hidden space-y-6">
+            <!-- Admin Login akan ditampilkan di modal terpisah -->
+            <div id="adminDash" class="space-y-6">
                 <div class="bg-white p-4 rounded-xl shadow-sm">
                      <h3 class="text-xs font-bold text-slate-400 mb-2 uppercase">Pengaturan Toko</h3>
                      <input id="admStoreName" class="w-full border p-2 rounded mb-2 text-xs focus:outline-none focus:border-blue-300" placeholder="Nama Toko">
@@ -354,6 +426,8 @@
 
     const STORE_ID = "itsbad-store";
     const OWNER_WA = "6285236363128";
+    const ADMIN_PIN = "110603";
+    const ADMIN_EMAIL = "isbadd84@gmail.com";
 
     let db, auth, user;
     let storeData = { name: "Itsbad Store", fee: 0, products: [] };
@@ -382,7 +456,88 @@
     }
 
     // ==============================================
-    // FUNGSI LOGIN
+    // ADMIN LOGIN FUNCTIONS (New)
+    // ==============================================
+    function openAdminLogin() {
+      // Cek apakah user sudah login dengan Google
+      if (!user || user === null) {
+        toastr.warning('Silakan login dengan Google terlebih dahulu!');
+        // Trigger login Google jika ada
+        if (typeof googleLogin === 'function') {
+          googleLogin();
+        }
+        return;
+      }
+      
+      // Cek email admin
+      if (user.email !== ADMIN_EMAIL) {
+        toastr.error('Hanya admin dengan email tertentu yang bisa mengakses!');
+        return;
+      }
+      
+      document.getElementById('adminLoginModal').classList.remove('hidden');
+      document.getElementById('adminPin').focus();
+    }
+
+    function closeAdminLogin() {
+      document.getElementById('adminLoginModal').classList.add('hidden');
+      document.getElementById('adminPin').value = '';
+    }
+
+    function checkAdmin() {
+      // Ambil nilai PIN dari input
+      const adminPin = document.getElementById('adminPin').value;
+      
+      // Cek apakah user sudah login dengan Google
+      if (!user || user === null) {
+        toastr.error('Akses Ditolak', 'Anda harus login dengan akun Google terlebih dahulu!');
+        return false;
+      }
+      
+      // Verifikasi email admin
+      if (user.email !== ADMIN_EMAIL) {
+        toastr.error('Akses Ditolak', 'Hanya admin dengan email tertentu yang bisa mengakses!');
+        return false;
+      }
+      
+      // Cek apakah PIN yang dimasukkan benar
+      if (adminPin !== ADMIN_PIN) {
+        toastr.error('PIN Salah', 'PIN yang Anda masukkan tidak benar!');
+        document.getElementById('adminPin').value = '';
+        document.getElementById('adminPin').focus();
+        return false;
+      }
+      
+      // Jika semua validasi sukses
+      // 1. Sembunyikan modal login admin
+      document.getElementById('adminLoginModal').classList.add('hidden');
+      
+      // 2. Tampilkan dashboard admin
+      document.getElementById('adminModal').classList.remove('hidden');
+      
+      // 3. Load data toko ke form admin
+      document.getElementById('admStoreName').value = storeData.name || "";
+      document.getElementById('admFee').value = storeData.fee || 0;
+      document.getElementById('admQris').value = storeData.qris || "";
+      
+      // 4. Render list produk admin
+      renderAdmList();
+      
+      // 5. Tampilkan notifikasi sukses
+      toastr.success('Panel Admin berhasil dibuka!');
+      
+      // Reset form PIN
+      document.getElementById('adminPin').value = '';
+      
+      return true;
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('adminModal').classList.add('hidden');
+    }
+
+    // ==============================================
+    // FUNGSI LOGIN USER
     // ==============================================
     async function loginWithGoogle() {
       try {
@@ -412,6 +567,20 @@
           isGuestMode = false;
           loadProfile(user.uid);
           initStore();
+          
+          // Cek apakah user admin untuk menampilkan tombol admin
+          if (user.email === ADMIN_EMAIL) {
+            // Tambahkan tombol admin ke navbar
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav && !document.getElementById('nav-admin')) {
+              const adminBtn = document.createElement('button');
+              adminBtn.id = 'nav-admin';
+              adminBtn.className = 'nav-item';
+              adminBtn.innerHTML = '<i class="fas fa-cog"></i> Admin';
+              adminBtn.onclick = openAdminLogin;
+              bottomNav.appendChild(adminBtn);
+            }
+          }
         }, 300);
         
       } catch (error) {
@@ -422,8 +591,6 @@
           errorMessage = "Popup diblokir. Izinkan popup untuk situs ini.";
         } else if (error.code === 'auth/cancelled-popup-request') {
           errorMessage = "Login dibatalkan";
-        } else if (error.code === 'auth/unauthorized-domain') {
-          errorMessage = "Domain belum diizinkan di Firebase Console";
         } else {
           errorMessage = "Login gagal: " + error.message;
         }
@@ -1232,42 +1399,8 @@
     }
 
     // ==============================================
-    // ADMIN FUNCTIONS (UPDATED - SIMPLE & AMAN)
+    // ADMIN FUNCTIONS
     // ==============================================
-    function checkAdmin() {
-      // 1. Ambil PIN yang diketik
-      const pin = document.getElementById('adminPinInput').value;
-
-      // 2. Cek apakah user sudah Login Google?
-      if (!user) {
-        toastr.warning("Silakan Login Google (isbadd84@gmail.com) dulu di halaman depan!");
-        return;
-      }
-
-      // 3. Cek Kecocokan PIN (Hanya di Client Side)
-      if (pin === "110603") {
-        
-        // -- PIN BENAR --
-        toastr.success("Akses Admin Diberikan");
-        document.getElementById('adminLogin').classList.add('hidden');
-        document.getElementById('adminDash').classList.remove('hidden');
-        
-        // Load data toko ke form admin
-        if(typeof storeData !== 'undefined'){
-            document.getElementById('admStoreName').value = storeData.name || "";
-            document.getElementById('admFee').value = storeData.fee || 0;
-            document.getElementById('admQris').value = storeData.qris || "";
-            renderAdmList();
-        }
-
-      } else {
-        // -- PIN SALAH --
-        toastr.error("PIN Salah!");
-        document.getElementById('adminPinInput').value = ""; // Kosongkan input
-        document.getElementById('adminPinInput').focus();
-      }
-    }
-    
     function handleAdmImg(input) {
       const file = input.files[0];
       if(!file) return;
@@ -1560,6 +1693,34 @@
         guestBtn.addEventListener('click', continueAsGuest);
       }
       
+      // Setup PIN form
+      const pinForm = document.getElementById('pinForm');
+      if (pinForm) {
+        pinForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          checkAdmin();
+        });
+      }
+      
+      // Setup toggle PIN visibility
+      const togglePinBtn = document.getElementById('togglePin');
+      const pinInput = document.getElementById('adminPin');
+      
+      if (togglePinBtn && pinInput) {
+        togglePinBtn.addEventListener('click', function() {
+          const type = pinInput.getAttribute('type') === 'password' ? 'text' : 'password';
+          pinInput.setAttribute('type', type);
+          
+          // Ganti icon
+          const eyeIcon = this.querySelector('svg');
+          if (type === 'text') {
+            eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>';
+          } else {
+            eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+          }
+        });
+      }
+      
       // Cek URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       
@@ -1573,9 +1734,13 @@
           
           document.getElementById('loginModal').classList.add('hidden');
           document.getElementById('app').classList.remove('hidden');
-          document.getElementById('adminModal').classList.remove('hidden');
           
+          // Langsung buka admin login modal
           initStore();
+          setTimeout(() => {
+            openAdminLogin();
+          }, 500);
+          
         } catch (e) {
           console.error("Admin init error:", e);
           showError("Gagal mengakses admin panel");
@@ -1599,6 +1764,20 @@
               
               loadProfile(user.uid);
               initStore();
+              
+              // Cek apakah user admin untuk menampilkan tombol admin
+              if (user.email === ADMIN_EMAIL) {
+                // Tambahkan tombol admin ke navbar
+                const bottomNav = document.querySelector('.bottom-nav');
+                if (bottomNav && !document.getElementById('nav-admin')) {
+                  const adminBtn = document.createElement('button');
+                  adminBtn.id = 'nav-admin';
+                  adminBtn.className = 'nav-item';
+                  adminBtn.innerHTML = '<i class="fas fa-cog"></i> Admin';
+                  adminBtn.onclick = openAdminLogin;
+                  bottomNav.appendChild(adminBtn);
+                }
+              }
             } else {
               // Tidak ada user, tetap di login screen
               console.log("No user session, showing login screen");
@@ -1638,6 +1817,9 @@
     window.handleAvatarUpload = handleAvatarUpload;
     window.saveProfileData = saveProfileData;
     window.checkAdmin = checkAdmin;
+    window.openAdminLogin = openAdminLogin;
+    window.closeAdminLogin = closeAdminLogin;
+    window.closeAdminPanel = closeAdminPanel;
     window.handleAdmImg = handleAdmImg;
     window.handleQrisUpload = handleQrisUpload;
     window.saveAdmProd = saveAdmProd;
