@@ -118,7 +118,8 @@
                     <input type="text" id="orderNote" class="w-full bg-white border border-blue-200 rounded-lg px-3 py-2 text-xs focus:outline-none" placeholder="Contoh: 08123xxxx">
                 </div>
                 <div class="flex justify-between items-center mb-4"><span class="text-sm text-slate-500">Total + Fee</span><span class="text-xl font-bold text-blue-600" id="cartTotalDisplay">Rp 0</span></div>
-                <button onclick="window.initPayment()" id="btnCheckout" class="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-lg">Lanjut Pembayaran</button>
+                
+                <button onclick="window.initPayment()" class="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold shadow-lg active:scale-95 transition">Lanjut Pembayaran</button>
             </div>
         </div>
     </div>
@@ -329,7 +330,6 @@
             storeData.products.forEach(p => {
                 const c = p.category || 'Umum';
                 if(!cats.includes(c)) cats.push(c);
-                // Populate Datalist for Admin
                 if(!Array.from(datalist.options).some(opt => opt.value === c)) {
                     const opt = document.createElement('option');
                     opt.value = c;
@@ -417,12 +417,13 @@
 
     function renderCartList() {
         const l = document.getElementById('cartList'); l.innerHTML = ""; let tot = 0;
-        const btn = document.getElementById('btnCheckout');
+        // Logic tombol di sini tidak lagi mendisable tombol
         if(cart.length === 0) {
             l.innerHTML = `<div class="text-center text-xs text-slate-400 py-10">Keranjang Kosong</div>`;
-            document.getElementById('cartTotalDisplay').innerText = "Rp 0"; btn.disabled = true; return;
+            document.getElementById('cartTotalDisplay').innerText = "Rp 0";
+            return;
         }
-        btn.disabled = false;
+        
         cart.forEach((c, i) => {
             const itemTotal = (c.price || 0) * (c.qty || 0); tot += itemTotal;
             l.innerHTML += `<div class="flex justify-between items-center bg-white border border-slate-100 p-3 rounded-xl"><div><h4 class="font-bold text-xs text-slate-700">${c.name}</h4><p class="text-xs text-blue-600 font-bold">Rp ${c.price.toLocaleString()}</p></div><div class="flex items-center gap-3 bg-slate-50 rounded-lg px-2 py-1"><button onclick="window.modQty(${i},-1)" class="w-5 font-bold">-</button><span class="text-xs font-bold w-3 text-center">${c.qty}</span><button onclick="window.modQty(${i},1)" class="w-5 font-bold">+</button></div></div>`;
@@ -434,10 +435,11 @@
 
     // --- CHECKOUT & QRIS FIX ---
     window.initPayment = () => {
-        if(cart.length===0) return toastr.warning("Kosong");
+        if(cart.length===0) return toastr.warning("Keranjang kosong!");
         
-        // CATATAN SEKARANG OPSIONAL
-        const note = document.getElementById('orderNote').value || "-";
+        // HAPUS VALIDASI WAJIB CATATAN
+        // const note = document.getElementById('orderNote').value;
+        // if(!note) return toastr.warning("Wajib isi Catatan/No.HP!");
         
         const sub = cart.reduce((a,b)=>a+b.qty*b.price,0); const fee = parseInt(storeData.fee) || 0; const tot = sub + fee;
         document.getElementById('payAmountDisplay').innerText="Rp "+tot.toLocaleString();
@@ -538,7 +540,6 @@
         const r = new FileReader(); r.onload=(e)=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');const x=c.getContext('2d');const m=300;let w=i.width,h=i.height;if(w>m){h*=m/w;w=m;}c.width=w;c.height=h;x.drawImage(i,0,0,w,h);tempAdmImg=c.toDataURL('image/jpeg',0.7);document.getElementById('admImgPrev').src=tempAdmImg;document.getElementById('admImgPrev').classList.remove('hidden');document.getElementById('admImgIcon').classList.add('hidden');};i.src=e.target.result;};r.readAsDataURL(f);
     };
 
-    // QRIS DECODER (NEW)
     window.handleQrisUpload = (inp) => {
         const f = inp.files[0]; if(!f) return;
         const r = new FileReader();
