@@ -80,15 +80,62 @@
 </head>
 <body class="bg-slate-100 text-slate-800">
 
-  <!-- LOGIN MODAL (Muncul Pertama) -->
-  <div id="loginModal" class="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-5">
-    <div class="text-center mb-8">
-      <div class="w-24 h-24 mx-auto mb-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
-        <i class="fas fa-store text-white text-3xl"></i>
-      </div>
-      <h1 class="text-2xl font-bold text-slate-800 mb-2">Selamat Datang</h1>
-      <p class="text-sm text-slate-500">Itsbad Store - Premium Digital Services</p>
+
+<!-- Admin Login Section -->
+<div id="adminLogin" class="px-5 py-8 text-center">
+    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
+        <i class="fas fa-lock text-white text-2xl"></i>
     </div>
+    <h3 class="text-lg font-bold text-slate-800 mb-2">Akses Admin</h3>
+    <p class="text-sm text-slate-500 mb-6">Masukkan PIN Admin untuk melanjutkan</p>
+    
+    <div class="mb-6 relative">
+        <input 
+            type="password" 
+            id="adminPin" 
+            maxlength="6" 
+            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,6)"
+            class="w-full px-5 py-4 text-2xl font-mono tracking-widest text-center bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+            placeholder="••••••"
+            autocomplete="off"
+        >
+        <button 
+            type="button" 
+            onclick="toggleAdminPin()"
+            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            id="togglePinBtn"
+        >
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+    
+    <!-- Info penting -->
+    <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-left">
+        <div class="flex items-start gap-3">
+            <i class="fas fa-info-circle text-blue-500 text-lg mt-0.5"></i>
+            <div>
+                <h4 class="font-bold text-sm text-blue-700 mb-1">Perhatian!</h4>
+                <p class="text-xs text-blue-600 leading-relaxed">
+                    Anda harus login dengan akun Google <span class="font-bold">hanya milik admin</span> untuk mengakses panel admin. 
+                    PIN hanya verifikasi UI, semua perubahan data tetap tunduk pada Firebase Security Rules.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <button 
+        onclick="checkAdmin()" 
+        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+    >
+        <i class="fas fa-unlock-alt"></i>
+        Buka Panel Admin
+    </button>
+    
+    <p class="text-xs text-slate-400 mt-4">
+        <i class="fas fa-shield-alt mr-1"></i>
+        Akses terbatas untuk admin terverifikasi
+    </p>
+</div>
     
     <div class="w-full max-w-xs space-y-4">
       <button id="googleLoginBtn" class="login-option w-full bg-white border border-slate-200 py-3.5 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-slate-50">
@@ -1228,22 +1275,269 @@
     // ==============================================
     // ADMIN FUNCTIONS
     // ==============================================
-    function checkAdmin() {
-      const pin = document.getElementById('adminPin').value;
-      if(pin === "110603") {
-        document.getElementById('adminLogin').classList.add('hidden');
-        document.getElementById('adminDash').classList.remove('hidden');
-        document.getElementById('admStoreName').value = storeData.name || "";
-        document.getElementById('admFee').value = storeData.fee || 0;
-        document.getElementById('admQris').value = storeData.qris || "";
-        renderAdmList();
-        toastr.success("Berhasil login sebagai admin");
-      } else {
-        toastr.error("PIN salah");
-        document.getElementById('adminPin').value = "";
-        document.getElementById('adminPin').focus();
-      }
+// ==============================================
+// ADMIN FUNCTIONS (DIPERBAIKI)
+// ==============================================
+
+// Fungsi untuk toggle visibility PIN admin
+function toggleAdminPin() {
+    const pinInput = document.getElementById('adminPin');
+    const toggleBtn = document.getElementById('togglePinBtn');
+    
+    if (pinInput.type === 'password') {
+        pinInput.type = 'text';
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        toggleBtn.setAttribute('title', 'Sembunyikan PIN');
+    } else {
+        pinInput.type = 'password';
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        toggleBtn.setAttribute('title', 'Tampilkan PIN');
     }
+}
+
+// Fungsi utama checkAdmin yang diperbaiki
+async function checkAdmin() {
+    // Ambil nilai PIN dari input
+    const adminPin = document.getElementById('adminPin').value;
+    const correctPin = "110603"; // PIN yang benar
+    
+    console.log("Checking admin access...");
+    
+    // 1. Cek apakah user sudah login dengan Google
+    if (!user || user === null || isGuestMode) {
+        toastr.error('Akses Ditolak', 'Anda harus login dengan akun Google terlebih dahulu!');
+        
+        // Arahkan ke login
+        setTimeout(() => {
+            document.getElementById('adminModal').classList.add('hidden');
+            showLoginOptions();
+        }, 1500);
+        
+        return false;
+    }
+    
+    // 2. Verifikasi email di Firebase Authentication
+    const userEmail = user.email;
+    const adminEmail = "isbadd84@gmail.com";
+    
+    console.log("User email:", userEmail);
+    console.log("Admin email required:", adminEmail);
+    
+    if (userEmail !== adminEmail) {
+        toastr.error('Akses Ditolak', 'Hanya admin dengan email isbadd84@gmail.com yang bisa mengakses!');
+        
+        // Reset input PIN
+        document.getElementById('adminPin').value = '';
+        document.getElementById('adminPin').focus();
+        
+        return false;
+    }
+    
+    // 3. Cek apakah PIN yang dimasukkan benar
+    if (adminPin !== correctPin) {
+        toastr.error('PIN Salah', 'PIN yang Anda masukkan tidak benar!');
+        
+        // Reset input dengan efek
+        document.getElementById('adminPin').value = '';
+        document.getElementById('adminPin').classList.add('border-red-500', 'shake');
+        document.getElementById('adminPin').focus();
+        
+        // Hapus efek setelah animasi
+        setTimeout(() => {
+            document.getElementById('adminPin').classList.remove('border-red-500', 'shake');
+        }, 500);
+        
+        return false;
+    }
+    
+    // 4. Jika semua validasi sukses
+    try {
+        // Sembunyikan modal login admin dengan animasi
+        document.getElementById('adminLogin').style.opacity = '0';
+        document.getElementById('adminLogin').style.transform = 'translateY(-10px)';
+        
+        setTimeout(() => {
+            document.getElementById('adminLogin').classList.add('hidden');
+            
+            // Tampilkan dashboard admin
+            const adminDash = document.getElementById('adminDash');
+            adminDash.classList.remove('hidden');
+            adminDash.style.opacity = '0';
+            adminDash.style.transform = 'translateY(20px)';
+            
+            // Load data toko ke form admin
+            document.getElementById('admStoreName').value = storeData.name || "";
+            document.getElementById('admFee').value = storeData.fee || 0;
+            document.getElementById('admQris').value = storeData.qris || "";
+            
+            // Render daftar produk admin
+            renderAdmList();
+            
+            // Animasi fade in
+            setTimeout(() => {
+                adminDash.style.opacity = '1';
+                adminDash.style.transform = 'translateY(0)';
+                adminDash.style.transition = 'all 0.3s ease';
+            }, 10);
+            
+            // Tampilkan notifikasi sukses
+            showCustomToast('success', 'Akses Diberikan', 'Panel Admin berhasil dibuka!');
+            
+            // Reset form PIN
+            document.getElementById('adminPin').value = '';
+            document.getElementById('adminPin').type = 'password';
+            document.getElementById('togglePinBtn').innerHTML = '<i class="fas fa-eye"></i>';
+            
+        }, 300);
+        
+        return true;
+        
+    } catch (error) {
+        console.error("Admin login error:", error);
+        toastr.error('Error Sistem', 'Terjadi kesalahan saat mengakses panel admin');
+        return false;
+    }
+}
+
+// Fungsi untuk membuka admin panel (dari tombol atau URL)
+function openAdminPanel() {
+    // Cek URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('page') === 'admin') {
+        console.log("Admin mode via URL parameter");
+        
+        // Tampilkan modal admin
+        document.getElementById('adminModal').classList.remove('hidden');
+        
+        // Auto focus ke input PIN
+        setTimeout(() => {
+            const pinInput = document.getElementById('adminPin');
+            if (pinInput) {
+                pinInput.focus();
+            }
+        }, 300);
+        
+        return;
+    }
+    
+    // Untuk akses dari dalam app (misal dari menu tersembunyi)
+    // Anda bisa tambahkan tombol admin di profile atau tempat lain
+    console.log("Manual admin access attempt");
+    
+    // Cek dulu apakah user sudah login
+    if (!user || isGuestMode) {
+        toastr.warning('Login Diperlukan', 'Silakan login dengan Google terlebih dahulu!');
+        
+        // Trigger login Google jika ada
+        setTimeout(() => {
+            if (typeof googleLogin === 'function') {
+                googleLogin();
+            } else {
+                showLoginOptions();
+            }
+        }, 1000);
+        
+        return;
+    }
+    
+    // Tampilkan modal admin
+    document.getElementById('adminModal').classList.remove('hidden');
+    
+    // Auto focus ke input PIN
+    setTimeout(() => {
+        const pinInput = document.getElementById('adminPin');
+        if (pinInput) {
+            pinInput.focus();
+        }
+    }, 300);
+}
+
+// Fungsi untuk menutup admin panel
+function closeAdminPanel() {
+    document.getElementById('adminModal').classList.add('hidden');
+    
+    // Reset form admin login
+    document.getElementById('adminLogin').classList.remove('hidden');
+    document.getElementById('adminDash').classList.add('hidden');
+    document.getElementById('adminPin').value = '';
+    
+    // Reset styles
+    document.getElementById('adminLogin').style.opacity = '1';
+    document.getElementById('adminLogin').style.transform = 'translateY(0)';
+}
+
+// Fungsi toast custom untuk admin
+function showCustomToast(type, title, message) {
+    // Jika menggunakan Toastr.js
+    if (typeof toastr !== 'undefined') {
+        if (type === 'success') {
+            toastr.success(message, title);
+        } else if (type === 'error') {
+            toastr.error(message, title);
+        } else if (type === 'warning') {
+            toastr.warning(message, title);
+        }
+    } else {
+        // Fallback notification sederhana
+        console.log(`${type.toUpperCase()}: ${title} - ${message}`);
+        
+        // Buat notifikasi custom
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-xl shadow-xl text-white z-50 transform transition-all duration-300 ${
+            type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 
+            type === 'error' ? 'bg-gradient-to-r from-red-500 to-rose-500' : 
+            'bg-gradient-to-r from-amber-500 to-orange-500'
+        }`;
+        
+        notification.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'exclamation-triangle'} text-lg"></i>
+                <div>
+                    <div class="font-bold text-sm">${title}</div>
+                    <div class="text-xs opacity-90">${message}</div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animasi masuk
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 10);
+        
+        // Hapus notifikasi setelah 3 detik
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+}
+
+// Tambahkan CSS untuk animasi shake (tambahkan di style section)
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    .shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    
+    /* Admin panel transition */
+    #adminLogin, #adminDash {
+        transition: all 0.3s ease;
+    }
+`;
+document.head.appendChild(style);
     
     function handleAdmImg(input) {
       const file = input.files[0];
