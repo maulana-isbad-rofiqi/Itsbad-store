@@ -77,7 +77,7 @@
             
             <div class="h-48 bg-slate-100 flex items-center justify-center relative">
                 <i class="fas fa-box text-6xl text-slate-200"></i>
-                </div>
+            </div>
             
             <div class="p-5">
                 <div class="flex justify-between items-start mb-2">
@@ -295,15 +295,16 @@
     import { getDatabase, ref, set, get, child, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // --- CONFIG ---
+    // --- CONFIG FIREBASE ASLI (SUDAH DIPERBAIKI) ---
     const firebaseConfig = {
-      apiKey: "ISI_API_KEY_DISINI", // Ganti dengan API Key yang VALID
-      authDomain: "ISI_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://ISI_PROJECT_ID-default-rtdb.firebaseio.com",
-      projectId: "ISI_PROJECT_ID",
-      storageBucket: "ISI_PROJECT_ID.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
+      apiKey: "AIzaSyAUL2WkPlJLb8wHcSKQ_QA7GSZ5DGw94Ng",
+      authDomain: "kasir-online-c22bd.firebaseapp.com",
+      databaseURL: "https://kasir-online-c22bd-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "kasir-online-c22bd",
+      storageBucket: "kasir-online-c22bd.firebasestorage.app",
+      messagingSenderId: "1052259146588",
+      appId: "1:1052259146588:web:a3f4e9c31982cbfa2dff99",
+      measurementId: "G-QR6HPRX459"
     };
 
     const STORE_ID = "toko-utama";
@@ -339,7 +340,7 @@
                 document.getElementById('authOverlay').classList.remove('hidden');
             }
         });
-    } catch(e) { alert("Firebase Config Error"); }
+    } catch(e) { alert("Firebase Config Error: " + e.message); }
 
     // --- USER PROFILE ---
     async function loadUserProfile(uid) {
@@ -389,8 +390,6 @@
         if(!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            // Compress simple logic (use canvas if needed, here raw base64)
-            // Warning: Realtime DB has limit 10MB/write. Keep images small.
             if(ev.target.result.length > 500000) return toastr.warning("Gambar terlalu besar! Gunakan < 500KB");
             userData.avatar = ev.target.result;
             updateProfileUI();
