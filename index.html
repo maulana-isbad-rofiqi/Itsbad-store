@@ -117,7 +117,7 @@
     </div>
   </div>
 
-  <!-- ADMIN LOGIN MODAL (Modified) -->
+  <!-- ADMIN LOGIN MODAL -->
   <div id="adminLoginModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-gray-900 bg-opacity-50 hidden">
     <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-4">
       <!-- Header -->
@@ -208,7 +208,13 @@
                  <p class="text-[10px] text-slate-400 mt-1" id="headerGreeting">Loading...</p>
              </div>
         </div>
-        <button onclick="toggleSearch()" class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100"><i class="fas fa-search"></i></button>
+        <div class="flex items-center gap-2">
+            <!-- Tombol Admin (hanya muncul jika user admin) -->
+            <button id="adminHeaderBtn" onclick="openAdminLogin()" class="hidden w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors" title="Admin Panel">
+                <i class="fas fa-cog text-sm"></i>
+            </button>
+            <button onclick="toggleSearch()" class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100"><i class="fas fa-search"></i></button>
+        </div>
     </div>
 
     <div id="searchBar" class="hidden px-5 py-2 bg-white border-b border-slate-50">
@@ -239,6 +245,7 @@
         <button onclick="switchTab('home')" class="nav-item active" id="nav-home"><i class="fas fa-home"></i> Beranda</button>
         <button onclick="openCart()" class="nav-item relative" id="nav-cart"><i class="fas fa-shopping-bag"></i><span id="cartBadge" class="absolute top-0 right-6 w-4 h-4 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full border-2 border-white hidden">0</span> Keranjang</button>
         <button onclick="openProfile()" class="nav-item" id="nav-profile"><i class="fas fa-user"></i> Akun</button>
+        <button id="nav-admin" onclick="openAdminLogin()" class="nav-item hidden" title="Admin Panel"><i class="fas fa-cog"></i> Admin</button>
     </div>
 
     <div id="detailModal" class="fixed inset-0 z-[70] hidden">
@@ -357,7 +364,6 @@
             <button onclick="closeAdminPanel()" class="text-red-500 text-xs font-bold hover:text-red-600">Tutup</button>
         </div>
         <div class="p-5" id="adminContent">
-            <!-- Admin Login akan ditampilkan di modal terpisah -->
             <div id="adminDash" class="space-y-6">
                 <div class="bg-white p-4 rounded-xl shadow-sm">
                      <h3 class="text-xs font-bold text-slate-400 mb-2 uppercase">Pengaturan Toko</h3>
@@ -448,33 +454,37 @@
     };
 
     // ==============================================
-    // FUNGSI UTAMA
-    // ==============================================
-    function showError(message) {
-      console.error("App Error:", message);
-      toastr.error(message);
-    }
-
-    // ==============================================
-    // ADMIN LOGIN FUNCTIONS (New)
+    // ADMIN LOGIN FUNCTIONS
     // ==============================================
     function openAdminLogin() {
+      console.log("Checking admin access...");
+      console.log("User object:", user);
+      console.log("User email:", user?.email);
+      
       // Cek apakah user sudah login dengan Google
       if (!user || user === null) {
         toastr.warning('Silakan login dengan Google terlebih dahulu!');
-        // Trigger login Google jika ada
-        if (typeof googleLogin === 'function') {
-          googleLogin();
+        // Trigger login Google
+        if (typeof loginWithGoogle === 'function') {
+          loginWithGoogle();
+        } else {
+          showLoginOptions();
         }
         return;
       }
       
-      // Cek email admin
-      if (user.email !== ADMIN_EMAIL) {
-        toastr.error('Hanya admin dengan email tertentu yang bisa mengakses!');
+      // Cek email admin - dengan case-insensitive
+      const userEmail = user.email ? user.email.toLowerCase() : '';
+      const adminEmail = ADMIN_EMAIL.toLowerCase();
+      
+      console.log("Checking email:", userEmail, "vs", adminEmail);
+      
+      if (userEmail !== adminEmail) {
+        toastr.error('Akses Ditolak', 'Hanya admin dengan email isbadd84@gmail.com yang bisa mengakses!');
         return;
       }
       
+      // Jika email admin benar, tampilkan modal login PIN
       document.getElementById('adminLoginModal').classList.remove('hidden');
       document.getElementById('adminPin').focus();
     }
@@ -495,8 +505,11 @@
       }
       
       // Verifikasi email admin
-      if (user.email !== ADMIN_EMAIL) {
-        toastr.error('Akses Ditolak', 'Hanya admin dengan email tertentu yang bisa mengakses!');
+      const userEmail = user.email ? user.email.toLowerCase() : '';
+      const adminEmail = ADMIN_EMAIL.toLowerCase();
+      
+      if (userEmail !== adminEmail) {
+        toastr.error('Akses Ditolak', 'Hanya admin dengan email isbadd84@gmail.com yang bisa mengakses!');
         return false;
       }
       
@@ -551,37 +564,48 @@
         const result = await signInWithPopup(auth, provider);
         
         console.log("✅ Google login successful:", result.user.email);
+        console.log("User UID:", result.user.uid);
+        
+        user = result.user;
+        isGuestMode = false;
+        
+        // Periksa apakah user admin
+        const userEmail = user.email ? user.email.toLowerCase() : '';
+        const adminEmail = ADMIN_EMAIL.toLowerCase();
+        
+        // Tampilkan tombol admin di header jika email sesuai
+        const adminHeaderBtn = document.getElementById('adminHeaderBtn');
+        const adminNavBtn = document.getElementById('nav-admin');
+        
+        if (userEmail === adminEmail) {
+          if (adminHeaderBtn) {
+            adminHeaderBtn.classList.remove('hidden');
+          }
+          if (adminNavBtn) {
+            adminNavBtn.classList.remove('hidden');
+          }
+          console.log("✅ Admin user detected, showing admin buttons");
+        }
+        
         toastr.success("Login berhasil!");
         
-        // Sembunyikan login modal dengan animasi
+        // Sembunyikan login modal
         const loginModal = document.getElementById('loginModal');
-        loginModal.style.opacity = '0';
-        loginModal.style.transform = 'scale(0.95)';
+        loginModal.classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
         
-        setTimeout(() => {
-          loginModal.classList.add('hidden');
-          document.getElementById('app').classList.remove('hidden');
-          
-          // Load data setelah login
-          user = result.user;
-          isGuestMode = false;
-          loadProfile(user.uid);
-          initStore();
-          
-          // Cek apakah user admin untuk menampilkan tombol admin
-          if (user.email === ADMIN_EMAIL) {
-            // Tambahkan tombol admin ke navbar
-            const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav && !document.getElementById('nav-admin')) {
-              const adminBtn = document.createElement('button');
-              adminBtn.id = 'nav-admin';
-              adminBtn.className = 'nav-item';
-              adminBtn.innerHTML = '<i class="fas fa-cog"></i> Admin';
-              adminBtn.onclick = openAdminLogin;
-              bottomNav.appendChild(adminBtn);
-            }
-          }
-        }, 300);
+        // Load data setelah login
+        loadProfile(user.uid);
+        initStore();
+        
+        // Jika URL mengandung ?page=admin, langsung buka admin login
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('page') === 'admin') {
+          console.log("Opening admin panel from URL parameter...");
+          setTimeout(() => {
+            openAdminLogin();
+          }, 500);
+        }
         
       } catch (error) {
         console.error("❌ Google login error:", error);
@@ -623,37 +647,32 @@
       
       toastr.success("Masuk sebagai tamu");
       
-      // Sembunyikan login modal dengan animasi
+      // Sembunyikan login modal
       const loginModal = document.getElementById('loginModal');
-      loginModal.style.opacity = '0';
-      loginModal.style.transform = 'scale(0.95)';
+      loginModal.classList.add('hidden');
+      const appContainer = document.getElementById('app');
+      appContainer.classList.remove('hidden');
       
-      setTimeout(() => {
-        loginModal.classList.add('hidden');
-        const appContainer = document.getElementById('app');
-        appContainer.classList.remove('hidden');
-        
-        // Tampilkan auth alert untuk guest
-        const authAlert = document.getElementById('authAlert');
-        if (authAlert) {
-          authAlert.classList.remove('hidden');
-        }
-        
-        // Update header
-        const headerAvatar = document.getElementById('headerAvatar');
-        const headerGreeting = document.getElementById('headerGreeting');
-        
-        if (headerAvatar) {
-          headerAvatar.src = "https://ui-avatars.com/api/?name=Guest&background=6366f1&color=fff";
-        }
-        
-        if (headerGreeting) {
-          headerGreeting.innerText = "Mode Tamu";
-        }
-        
-        // Init store
-        initStore();
-      }, 300);
+      // Tampilkan auth alert untuk guest
+      const authAlert = document.getElementById('authAlert');
+      if (authAlert) {
+        authAlert.classList.remove('hidden');
+      }
+      
+      // Update header
+      const headerAvatar = document.getElementById('headerAvatar');
+      const headerGreeting = document.getElementById('headerGreeting');
+      
+      if (headerAvatar) {
+        headerAvatar.src = "https://ui-avatars.com/api/?name=Guest&background=6366f1&color=fff";
+      }
+      
+      if (headerGreeting) {
+        headerGreeting.innerText = "Mode Tamu";
+      }
+      
+      // Init store
+      initStore();
     }
 
     function showLoginOptions() {
@@ -666,12 +685,8 @@
         // Sembunyikan app
         appContainer.classList.add('hidden');
         
-        // Tampilkan login modal dengan animasi
+        // Tampilkan login modal
         loginModal.classList.remove('hidden');
-        setTimeout(() => {
-          loginModal.style.opacity = '1';
-          loginModal.style.transform = 'scale(1)';
-        }, 10);
       }
     }
 
@@ -1723,72 +1738,65 @@
       
       // Cek URL parameters
       const urlParams = new URLSearchParams(window.location.search);
+      const isAdminPage = urlParams.get('page') === 'admin';
       
-      if (urlParams.get('page') === 'admin') {
-        console.log("Admin mode detected");
-        // Langsung ke admin tanpa login
-        try {
-          const app = initializeApp(firebaseConfig);
-          db = getDatabase(app);
-          auth = getAuth(app);
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        auth = getAuth(app);
+        
+        // Setup auth state listener
+        onAuthStateChanged(auth, (userData) => {
+          console.log("Auth state changed:", userData);
           
-          document.getElementById('loginModal').classList.add('hidden');
-          document.getElementById('app').classList.remove('hidden');
-          
-          // Langsung buka admin login modal
-          initStore();
-          setTimeout(() => {
-            openAdminLogin();
-          }, 500);
-          
-        } catch (e) {
-          console.error("Admin init error:", e);
-          showError("Gagal mengakses admin panel");
-        }
-      } else {
-        // Normal user mode - init firebase
-        try {
-          const app = initializeApp(firebaseConfig);
-          db = getDatabase(app);
-          auth = getAuth(app);
-          
-          // Setup auth state listener
-          onAuthStateChanged(auth, (userData) => {
-            if (userData) {
-              // User sudah login dari session sebelumnya
-              user = userData;
-              isGuestMode = false;
-              
-              document.getElementById('loginModal').classList.add('hidden');
-              document.getElementById('app').classList.remove('hidden');
-              
-              loadProfile(user.uid);
-              initStore();
-              
-              // Cek apakah user admin untuk menampilkan tombol admin
-              if (user.email === ADMIN_EMAIL) {
-                // Tambahkan tombol admin ke navbar
-                const bottomNav = document.querySelector('.bottom-nav');
-                if (bottomNav && !document.getElementById('nav-admin')) {
-                  const adminBtn = document.createElement('button');
-                  adminBtn.id = 'nav-admin';
-                  adminBtn.className = 'nav-item';
-                  adminBtn.innerHTML = '<i class="fas fa-cog"></i> Admin';
-                  adminBtn.onclick = openAdminLogin;
-                  bottomNav.appendChild(adminBtn);
-                }
-              }
-            } else {
-              // Tidak ada user, tetap di login screen
-              console.log("No user session, showing login screen");
-              document.getElementById('loginModal').classList.remove('hidden');
+          if (userData) {
+            // User sudah login dari session sebelumnya
+            user = userData;
+            isGuestMode = false;
+            
+            console.log("User email from session:", user.email);
+            
+            // Periksa apakah user admin dan tampilkan tombol
+            const userEmail = user.email ? user.email.toLowerCase() : '';
+            const adminEmail = ADMIN_EMAIL.toLowerCase();
+            const adminHeaderBtn = document.getElementById('adminHeaderBtn');
+            const adminNavBtn = document.getElementById('nav-admin');
+            
+            if (userEmail === adminEmail) {
+              if (adminHeaderBtn) adminHeaderBtn.classList.remove('hidden');
+              if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+              console.log("✅ Admin user detected from session");
             }
-          });
-          
-        } catch (e) {
-          console.error("Firebase init error:", e);
-          showError("Gagal menginisialisasi aplikasi");
-        }
+            
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            
+            loadProfile(user.uid);
+            initStore();
+            
+            // Jika URL mengandung ?page=admin, langsung buka admin
+            if (isAdminPage) {
+              console.log("Opening admin panel from URL parameter...");
+              setTimeout(() => {
+                openAdminLogin();
+              }, 1000);
+            }
+          } else {
+            // Tidak ada user, tetap di login screen
+            console.log("No user session, showing login screen");
+            document.getElementById('loginModal').classList.remove('hidden');
+            
+            // Jika URL admin tapi belum login, tetap tampilkan login modal
+            if (isAdminPage) {
+              console.log("Admin page requested but not logged in");
+            }
+          }
+        });
+        
+      } catch (e) {
+        console.error("Firebase init error:", e);
+        document.getElementById('loginModal').classList.remove('hidden');
+        toastr.error("Gagal menginisialisasi aplikasi");
       }
     });
 
@@ -1835,4 +1843,4 @@
 
   </script>
 </body>
-</html>
+  </html>
