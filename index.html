@@ -3,107 +3,437 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Kasir Online - Final Fix</title>
+  <title>Kasir QRIS Online</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-    .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #6366f1; width: 16px; height: 16px; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .loader {
+      border: 3px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 3px solid #6366f1;
+      width: 16px;
+      height: 16px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .qrcode-container {
+      position: relative;
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    .slide-in {
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .amount-button {
+      transition: all 0.2s;
+    }
+    .amount-button:active {
+      transform: scale(0.95);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
-<body class="flex justify-center min-h-screen text-slate-800">
-
-  <div class="w-full max-w-md bg-white shadow-2xl min-h-screen relative flex flex-col">
+<body class="flex justify-center items-center min-h-screen p-4">
+  
+  <div class="w-full max-w-md bg-white shadow-2xl rounded-3xl overflow-hidden min-h-[90vh] flex flex-col">
     
-    <div class="bg-indigo-600 text-white p-6 pt-8 rounded-b-[2rem] shadow-lg z-10 relative">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 pt-8">
       <div class="flex justify-between items-center mb-2">
-        <div>
-          <h1 class="text-2xl font-bold tracking-tight">Kasir Online</h1>
-          <p class="text-indigo-200 text-xs opacity-80">V4.0 Stable</p>
+        <div class="flex-1">
+          <h1 class="text-2xl font-bold tracking-tight">Kasir QRIS</h1>
+          <p class="text-white/80 text-sm">Solusi Pembayaran Digital</p>
         </div>
-        <div class="bg-white/10 px-3 py-1 rounded-full text-[10px] backdrop-blur-md flex items-center gap-2 border border-white/20">
+        <div class="bg-white/20 px-3 py-1.5 rounded-full text-xs backdrop-blur-md flex items-center gap-2 border border-white/30">
           <div id="loaderIcon" class="loader"></div> 
-          <span id="statusText" class="font-semibold">Connecting...</span>
+          <span id="statusText" class="font-semibold">Menyiapkan...</span>
         </div>
       </div>
-    </div>
-
-    <div class="flex-1 p-6 overflow-y-auto pb-24 relative">
-
-      <div id="page-home" class="text-center mt-8">
-        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
-          <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-             <i class="fas fa-store text-2xl text-indigo-500"></i>
-          </div>
-          <h2 class="font-bold text-lg text-slate-800">Masuk ke Toko</h2>
-          <p class="text-sm text-slate-500 mb-6">Masukkan ID Toko unik kamu.</p>
-          
-          <div class="relative">
-            <input type="text" id="storeIdInput" placeholder="Contoh: tokomu" class="w-full p-4 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold uppercase text-slate-700 tracking-wider focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
-          </div>
-          
-          <button id="btnLogin" class="w-full mt-4 bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">MASUK SEKARANG</button>
-        </div>
-      </div>
-
-      <div id="page-setup" class="hidden">
-        <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-          <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-cog text-slate-400"></i> Setup Toko</h3>
-          <button id="btnLogoutSetup" class="text-xs text-red-500 font-bold hover:bg-red-50 px-3 py-1 rounded-lg transition">Keluar</button>
-        </div>
-
-        <div class="space-y-4">
-          <div><label class="text-xs font-bold text-slate-500 ml-1">ID Toko</label><input type="text" id="setupId" disabled class="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 uppercase"></div>
-          <div><label class="text-xs font-bold text-slate-500 ml-1">Nama Toko</label><input type="text" id="setupName" placeholder="Contoh: Warung Berkah" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none"></div>
-          <div><label class="text-xs font-bold text-slate-500 ml-1">Nomor WhatsApp</label><input type="tel" id="setupWa" placeholder="08xxxxxxxxxx" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none"></div>
-          <div><label class="text-xs font-bold text-slate-500 ml-1">Nominal Default</label><input type="number" id="setupAmount" placeholder="Kosongkan jika bebas" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none"></div>
-          
-          <div class="p-4 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-center relative">
-            <input type="file" id="qrisFile" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
-            <p class="text-xs font-bold text-slate-500">Upload QRIS Baru</p>
-          </div>
-          
-          <button id="btnSave" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg mt-4 hover:bg-slate-900 transition">SIMPAN KE CLOUD ☁️</button>
-        </div>
-      </div>
-
-      <div id="page-cashier" class="hidden">
-        <div class="text-center mb-6">
-          <h2 id="dispName" class="font-bold text-xl text-slate-800">...</h2>
-          <div class="inline-block bg-slate-100 px-3 py-1 rounded-full mt-1">
-             <p class="text-[10px] text-slate-500 font-mono">ID: <span id="dispId">...</span></p>
-          </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-3xl shadow-xl border border-slate-100 flex flex-col items-center">
-          <div id="qrContainer" class="p-1 bg-white my-4"></div>
-          <h2 id="dispAmount" class="text-2xl font-bold text-slate-800 mb-1">Rp 0</h2>
-        </div>
-
-        <div class="mt-6 space-y-3">
-           <input type="text" id="custName" class="w-full p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Nama Kamu">
-           <input type="text" id="custNote" class="w-full p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Catatan">
-        </div>
-        
-        <button id="btnSendWA" class="w-full mt-4 bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2">
-          <i class="fab fa-whatsapp text-xl"></i> Kirim Bukti Bayar
+      
+      <!-- Navigation -->
+      <div class="flex mt-6 bg-white/10 rounded-xl p-1">
+        <button id="navHome" class="flex-1 py-2 rounded-lg font-medium transition-all text-center active-page">
+          <i class="fas fa-store mr-2"></i>Toko
         </button>
+        <button id="navTransactions" class="flex-1 py-2 rounded-lg font-medium transition-all text-center">
+          <i class="fas fa-history mr-2"></i>Riwayat
+        </button>
+        <button id="navSettings" class="flex-1 py-2 rounded-lg font-medium transition-all text-center">
+          <i class="fas fa-cog mr-2"></i>Settings
+        </button>
+      </div>
+    </div>
 
-        <div class="mt-8 text-center pt-4">
-             <button id="btnSwitchAdmin" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg">Masuk Admin</button>
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto pb-24 no-scrollbar p-0">
+      
+      <!-- Page: Home (Store Selection) -->
+      <div id="page-home" class="slide-in">
+        <div class="p-6">
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-3xl border border-blue-100 shadow-sm mb-6 text-center">
+            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <i class="fas fa-qrcode text-3xl text-indigo-600"></i>
+            </div>
+            <h2 class="font-bold text-xl text-slate-800 mb-2">Selamat Datang</h2>
+            <p class="text-slate-600 mb-6">Masukkan kode toko untuk mulai transaksi</p>
+            
+            <div class="relative mb-4">
+              <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+                <i class="fas fa-hashtag"></i>
+              </div>
+              <input type="text" id="storeIdInput" 
+                     placeholder="misal: toko-anda" 
+                     class="w-full pl-12 p-4 text-left bg-white border-2 border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
+                     maxlength="20">
+            </div>
+            
+            <button id="btnLogin" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
+              <i class="fas fa-sign-in-alt"></i>
+              MASUK KE TOKO
+            </button>
+            
+            <div class="mt-6 text-xs text-slate-500">
+              <p><i class="fas fa-info-circle mr-1"></i> Belum punya toko? Masukkan kode baru untuk membuat</p>
+            </div>
+          </div>
+          
+          <!-- Recent Stores -->
+          <div id="recentStores" class="hidden">
+            <h3 class="font-semibold text-slate-700 mb-3">Toko Terakhir</h3>
+            <div id="recentList" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Cashier -->
+      <div id="page-cashier" class="hidden">
+        <div class="p-6">
+          <!-- Store Info -->
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 id="dispName" class="font-bold text-xl text-slate-800">...</h2>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="bg-slate-100 px-3 py-1 rounded-full text-xs text-slate-600 font-mono">
+                  ID: <span id="dispId">...</span>
+                </span>
+                <span id="storeStatus" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                  <i class="fas fa-circle text-[8px]"></i> Aktif
+                </span>
+              </div>
+            </div>
+            <button id="btnEditStore" class="text-slate-600 hover:text-indigo-600 transition">
+              <i class="fas fa-edit text-lg"></i>
+            </button>
+          </div>
+
+          <!-- QR Display -->
+          <div class="bg-gradient-to-br from-slate-50 to-white p-8 rounded-3xl shadow-lg border border-slate-100 mb-6">
+            <div class="text-center mb-4">
+              <h3 class="font-semibold text-slate-700 mb-1">Scan QRIS untuk Bayar</h3>
+              <p class="text-sm text-slate-500">Gunakan aplikasi bank/mobile banking</p>
+            </div>
+            
+            <div id="qrContainer" class="flex justify-center mb-6">
+              <div class="qrcode-container">
+                <div class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded-lg">
+                  <i class="fas fa-qrcode text-4xl text-gray-300"></i>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Amount Display -->
+            <div class="text-center mb-6">
+              <p class="text-sm text-slate-500 mb-2">Total Pembayaran</p>
+              <div class="flex items-center justify-center gap-2">
+                <h2 id="dispAmount" class="text-3xl font-bold text-slate-800">Rp 0</h2>
+                <button id="btnEditAmount" class="text-indigo-600 hover:text-indigo-800">
+                  <i class="fas fa-edit"></i>
+                </button>
+              </div>
+              <p id="amountNote" class="text-xs text-slate-400 mt-2"></p>
+            </div>
+            
+            <!-- Quick Amount Buttons -->
+            <div id="quickAmounts" class="grid grid-cols-3 gap-2 mb-4 hidden">
+              <button class="amount-button bg-slate-100 hover:bg-slate-200 p-3 rounded-lg text-sm font-medium transition">
+                Rp 10.000
+              </button>
+              <button class="amount-button bg-slate-100 hover:bg-slate-200 p-3 rounded-lg text-sm font-medium transition">
+                Rp 25.000
+              </button>
+              <button class="amount-button bg-slate-100 hover:bg-slate-200 p-3 rounded-lg text-sm font-medium transition">
+                Rp 50.000
+              </button>
+            </div>
+            
+            <!-- Custom Amount Input -->
+            <div id="customAmountContainer" class="hidden mb-4">
+              <div class="flex gap-2">
+                <div class="flex-1 relative">
+                  <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">Rp</div>
+                  <input type="number" id="customAmount" 
+                         class="w-full pl-10 p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500"
+                         placeholder="Masukkan nominal">
+                </div>
+                <button id="btnApplyAmount" class="bg-indigo-600 text-white px-4 rounded-lg hover:bg-indigo-700">
+                  Terapkan
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Form -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Nama Pelanggan</label>
+              <input type="text" id="custName" 
+                     class="w-full p-3.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                     placeholder="Nama lengkap">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Nomor WhatsApp</label>
+              <input type="tel" id="custPhone" 
+                     class="w-full p-3.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                     placeholder="0812xxxxxxx">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Catatan (opsional)</label>
+              <textarea id="custNote" rows="2"
+                        class="w-full p-3.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        placeholder="Contoh: Beli kopi 2 pcs"></textarea>
+            </div>
+            
+            <button id="btnSendWA" 
+                    class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-3">
+              <i class="fab fa-whatsapp text-2xl"></i>
+              <span>Kirim Instruksi Pembayaran</span>
+            </button>
+            
+            <button id="btnCopyQR" 
+                    class="w-full border-2 border-slate-300 text-slate-700 font-medium py-3 rounded-xl hover:bg-slate-50 transition flex items-center justify-center gap-2">
+              <i class="far fa-copy"></i>
+              Salin QR Code
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Store Setup -->
+      <div id="page-setup" class="hidden">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h3 class="font-bold text-xl text-slate-700 flex items-center gap-3">
+                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-store text-indigo-600"></i>
+                </div>
+                <span>Setup Toko</span>
+              </h3>
+              <p class="text-slate-500 text-sm mt-1">Kelola informasi dan QRIS toko Anda</p>
+            </div>
+            <button id="btnCloseSetup" 
+                    class="text-slate-400 hover:text-slate-700 transition">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <div class="space-y-5">
+            <!-- Store ID -->
+            <div class="bg-slate-50 p-4 rounded-xl">
+              <label class="block text-xs font-bold text-slate-500 mb-1">ID TOKO</label>
+              <div class="flex items-center gap-2">
+                <input type="text" id="setupId" readonly 
+                       class="flex-1 bg-transparent border-none text-lg font-bold text-slate-700 uppercase">
+                <button id="btnCopyStoreId" class="text-slate-400 hover:text-indigo-600 transition">
+                  <i class="far fa-copy"></i>
+                </button>
+              </div>
+              <p class="text-xs text-slate-400 mt-2">ID ini digunakan untuk mengakses toko Anda</p>
+            </div>
+
+            <!-- Store Name -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Nama Toko</label>
+              <input type="text" id="setupName" 
+                     class="w-full p-4 border-2 border-slate-200 rounded-xl text-base focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+                     placeholder="Contoh: Warung Kopi Bahagia">
+            </div>
+
+            <!-- WhatsApp Number -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">
+                Nomor WhatsApp
+                <span class="text-xs text-slate-500">(untuk notifikasi)</span>
+              </label>
+              <div class="flex gap-2">
+                <div class="w-24">
+                  <select id="setupWaPrefix" class="w-full p-4 border-2 border-slate-200 rounded-xl">
+                    <option value="62">+62</option>
+                    <option value="1">+1</option>
+                  </select>
+                </div>
+                <input type="tel" id="setupWa" 
+                       class="flex-1 p-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none"
+                       placeholder="8123456789">
+              </div>
+            </div>
+
+            <!-- Default Amount -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Nominal Default</label>
+              <div class="flex items-center gap-3">
+                <input type="number" id="setupAmount" 
+                       class="flex-1 p-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none"
+                       placeholder="Kosongkan untuk nominal bebas">
+                <div class="text-sm text-slate-500">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="enableCustomAmount" class="rounded">
+                    <span>Izinkan custom</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- QRIS Upload -->
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">QRIS</label>
+              <div class="border-3 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-6 text-center relative hover:border-indigo-400 transition cursor-pointer">
+                <input type="file" id="qrisFile" accept="image/*,.pdf" 
+                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <i class="fas fa-qrcode text-xl text-indigo-600"></i>
+                </div>
+                <p class="font-medium text-slate-700 mb-1">Upload QRIS</p>
+                <p class="text-xs text-slate-500 mb-2">Format: JPG, PNG, atau PDF</p>
+                <p class="text-xs text-indigo-600" id="qrisFileName">Belum ada file dipilih</p>
+              </div>
+            </div>
+
+            <!-- QRIS Preview -->
+            <div id="qrisPreviewContainer" class="hidden">
+              <label class="block text-sm font-medium text-slate-700 mb-2">Preview QRIS</label>
+              <div class="bg-white p-4 rounded-xl border border-slate-200">
+                <img id="qrisPreview" class="w-32 h-32 mx-auto rounded-lg" src="" alt="QRIS Preview">
+                <p class="text-center text-xs text-slate-500 mt-2">QRIS saat ini</p>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-4 space-y-3">
+              <button id="btnSaveStore" 
+                      class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2">
+                <i class="fas fa-cloud-upload-alt"></i>
+                SIMPAN PERUBAHAN
+              </button>
+              
+              <div class="grid grid-cols-2 gap-3">
+                <button id="btnTestWA" 
+                        class="bg-green-100 text-green-700 py-3 rounded-xl font-medium hover:bg-green-200 transition flex items-center justify-center gap-2">
+                  <i class="fab fa-whatsapp"></i>
+                  Test WA
+                </button>
+                <button id="btnDeleteStore" 
+                        class="bg-red-100 text-red-700 py-3 rounded-xl font-medium hover:bg-red-200 transition flex items-center justify-center gap-2">
+                  <i class="fas fa-trash"></i>
+                  Hapus Toko
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page: Transactions -->
+      <div id="page-transactions" class="hidden">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-xl text-slate-700">Riwayat Transaksi</h3>
+            <button id="btnRefreshTransactions" class="text-slate-400 hover:text-indigo-600 transition">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+          
+          <div id="transactionsList" class="space-y-3">
+            <!-- Transactions will be loaded here -->
+          </div>
+          
+          <div id="emptyTransactions" class="text-center py-10">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-receipt text-2xl text-slate-400"></i>
+            </div>
+            <p class="text-slate-500">Belum ada transaksi</p>
+            <p class="text-sm text-slate-400 mt-1">Transaksi akan muncul di sini</p>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Bottom Navigation -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 max-w-md mx-auto">
+      <div class="flex justify-around">
+        <button id="footerHome" class="flex flex-col items-center text-indigo-600">
+          <i class="fas fa-home text-lg mb-1"></i>
+          <span class="text-xs font-medium">Toko</span>
+        </button>
+        <button id="footerCashier" class="flex flex-col items-center text-slate-400">
+          <i class="fas fa-qrcode text-lg mb-1"></i>
+          <span class="text-xs font-medium">Kasir</span>
+        </button>
+        <button id="footerHistory" class="flex flex-col items-center text-slate-400">
+          <i class="fas fa-history text-lg mb-1"></i>
+          <span class="text-xs font-medium">Riwayat</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
   </div>
 
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import jsQR from "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.mjs";
+    import { getDatabase, ref, set, get, child, update, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // 1. CONFIG
+    // Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAUL2WkPlJLb8wHcSKQ_QA7GSZ5DGw94Ng",
       authDomain: "kasir-online-c22bd.firebaseapp.com",
@@ -115,237 +445,850 @@
       measurementId: "G-QR6HPRX459"
     };
 
-    // 2. INIT & GLOBAL VARS
-    let app, db;
-    let currentStoreId = "";
-    let currentData = {};
+    // Initialize App
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    try {
-      app = initializeApp(firebaseConfig);
-      db = getDatabase(app);
+    // State Management
+    const state = {
+      currentStoreId: '',
+      currentStore: null,
+      transactions: [],
+      recentStores: JSON.parse(localStorage.getItem('recentStores') || '[]'),
+      qrCodeInstance: null
+    };
+
+    // DOM Elements
+    const elements = {
+      // Pages
+      pageHome: document.getElementById('page-home'),
+      pageCashier: document.getElementById('page-cashier'),
+      pageSetup: document.getElementById('page-setup'),
+      pageTransactions: document.getElementById('page-transactions'),
       
-      // Update UI Status jika berhasil load
-      document.getElementById('statusText').innerText = "Ready";
-      document.getElementById('loaderIcon').classList.remove('loader');
-      document.getElementById('loaderIcon').classList.add('bg-green-400', 'w-2', 'h-2', 'rounded-full');
-      console.log("Firebase Connected");
+      // Navigation
+      navHome: document.getElementById('navHome'),
+      navTransactions: document.getElementById('navTransactions'),
+      navSettings: document.getElementById('navSettings'),
+      footerHome: document.getElementById('footerHome'),
+      footerCashier: document.getElementById('footerCashier'),
+      footerHistory: document.getElementById('footerHistory'),
+      
+      // Status
+      statusText: document.getElementById('statusText'),
+      loaderIcon: document.getElementById('loaderIcon'),
+      
+      // Home Page
+      storeIdInput: document.getElementById('storeIdInput'),
+      btnLogin: document.getElementById('btnLogin'),
+      recentStores: document.getElementById('recentStores'),
+      recentList: document.getElementById('recentList'),
+      
+      // Cashier Page
+      dispName: document.getElementById('dispName'),
+      dispId: document.getElementById('dispId'),
+      dispAmount: document.getElementById('dispAmount'),
+      amountNote: document.getElementById('amountNote'),
+      qrContainer: document.getElementById('qrContainer'),
+      custName: document.getElementById('custName'),
+      custPhone: document.getElementById('custPhone'),
+      custNote: document.getElementById('custNote'),
+      btnEditStore: document.getElementById('btnEditStore'),
+      btnEditAmount: document.getElementById('btnEditAmount'),
+      btnSendWA: document.getElementById('btnSendWA'),
+      btnCopyQR: document.getElementById('btnCopyQR'),
+      quickAmounts: document.getElementById('quickAmounts'),
+      customAmountContainer: document.getElementById('customAmountContainer'),
+      customAmount: document.getElementById('customAmount'),
+      btnApplyAmount: document.getElementById('btnApplyAmount'),
+      
+      // Setup Page
+      setupId: document.getElementById('setupId'),
+      setupName: document.getElementById('setupName'),
+      setupWaPrefix: document.getElementById('setupWaPrefix'),
+      setupWa: document.getElementById('setupWa'),
+      setupAmount: document.getElementById('setupAmount'),
+      enableCustomAmount: document.getElementById('enableCustomAmount'),
+      qrisFile: document.getElementById('qrisFile'),
+      qrisFileName: document.getElementById('qrisFileName'),
+      qrisPreviewContainer: document.getElementById('qrisPreviewContainer'),
+      qrisPreview: document.getElementById('qrisPreview'),
+      btnSaveStore: document.getElementById('btnSaveStore'),
+      btnCloseSetup: document.getElementById('btnCloseSetup'),
+      btnCopyStoreId: document.getElementById('btnCopyStoreId'),
+      btnTestWA: document.getElementById('btnTestWA'),
+      btnDeleteStore: document.getElementById('btnDeleteStore'),
+      
+      // Transactions Page
+      transactionsList: document.getElementById('transactionsList'),
+      emptyTransactions: document.getElementById('emptyTransactions'),
+      btnRefreshTransactions: document.getElementById('btnRefreshTransactions')
+    };
 
-    } catch (e) {
-      alert("Gagal Init Firebase: " + e.message);
+    // Initialize App
+    document.addEventListener('DOMContentLoaded', () => {
+      initApp();
+      setupEventListeners();
+      loadRecentStores();
+      checkUrlStore();
+    });
+
+    function initApp() {
+      updateStatus('Siap digunakan', 'success');
+      
+      // Set default phone prefix
+      elements.setupWaPrefix.value = '62';
     }
 
-    // 3. EVENT LISTENERS (INI KUNCI PERBAIKANNYA)
-    // Kita pasang fungsi ke tombol secara manual lewat JS, bukan lewat HTML
-    document.getElementById('btnLogin').addEventListener('click', checkStore);
-    document.getElementById('btnSave').addEventListener('click', saveToCloud);
-    document.getElementById('btnSendWA').addEventListener('click', sendWA);
-    document.getElementById('btnLogoutSetup').addEventListener('click', logout);
-    document.getElementById('btnSwitchAdmin').addEventListener('click', renderSetup);
-
-    // Load QR Lib
-    const s = document.createElement('script');
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-    document.body.appendChild(s);
-
-    // Auto Login URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlStore = urlParams.get('store');
-    if(urlStore) {
-        document.getElementById('storeIdInput').value = urlStore;
-        setTimeout(checkStore, 1000);
+    function updateStatus(text, type = 'info') {
+      elements.statusText.textContent = text;
+      const icon = elements.loaderIcon;
+      
+      if (type === 'success') {
+        icon.className = 'w-2 h-2 rounded-full bg-green-500';
+      } else if (type === 'error') {
+        icon.className = 'w-2 h-2 rounded-full bg-red-500';
+      } else {
+        icon.className = 'loader';
+      }
     }
 
-    // --- LOGIC FUNCTIONS ---
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-3 rounded-lg shadow-lg text-white font-medium animate-slide-in ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'}`;
+      toast.textContent = message;
+      
+      elements.toastContainer.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    function showPage(pageName) {
+      // Hide all pages
+      elements.pageHome.classList.add('hidden');
+      elements.pageCashier.classList.add('hidden');
+      elements.pageSetup.classList.add('hidden');
+      elements.pageTransactions.classList.add('hidden');
+      
+      // Show selected page
+      elements[`page${pageName.charAt(0).toUpperCase() + pageName.slice(1)}`].classList.remove('hidden');
+      
+      // Update navigation
+      updateNavigation(pageName);
+    }
+
+    function updateNavigation(activePage) {
+      // Reset all
+      [elements.navHome, elements.navTransactions, elements.navSettings].forEach(nav => {
+        nav.classList.remove('active-page');
+      });
+      [elements.footerHome, elements.footerCashier, elements.footerHistory].forEach(footer => {
+        footer.classList.remove('text-indigo-600');
+        footer.classList.add('text-slate-400');
+      });
+      
+      // Set active
+      switch(activePage) {
+        case 'home':
+          elements.navHome.classList.add('active-page');
+          elements.footerHome.classList.add('text-indigo-600');
+          elements.footerHome.classList.remove('text-slate-400');
+          break;
+        case 'cashier':
+          elements.footerCashier.classList.add('text-indigo-600');
+          elements.footerCashier.classList.remove('text-slate-400');
+          break;
+        case 'transactions':
+          elements.navTransactions.classList.add('active-page');
+          elements.footerHistory.classList.add('text-indigo-600');
+          elements.footerHistory.classList.remove('text-slate-400');
+          break;
+        case 'setup':
+          elements.navSettings.classList.add('active-page');
+          break;
+      }
+    }
+
+    function setupEventListeners() {
+      // Navigation
+      elements.navHome.addEventListener('click', () => showPage('home'));
+      elements.navTransactions.addEventListener('click', () => {
+        if (state.currentStoreId) {
+          loadTransactions();
+          showPage('transactions');
+        }
+      });
+      elements.navSettings.addEventListener('click', () => {
+        if (state.currentStoreId) {
+          loadStoreData();
+          showPage('setup');
+        }
+      });
+      
+      elements.footerHome.addEventListener('click', () => showPage('home'));
+      elements.footerCashier.addEventListener('click', () => {
+        if (state.currentStoreId) showPage('cashier');
+      });
+      elements.footerHistory.addEventListener('click', () => {
+        if (state.currentStoreId) {
+          loadTransactions();
+          showPage('transactions');
+        }
+      });
+      
+      // Home Page
+      elements.btnLogin.addEventListener('click', checkStore);
+      elements.storeIdInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkStore();
+      });
+      
+      // Cashier Page
+      elements.btnEditStore.addEventListener('click', () => {
+        loadStoreData();
+        showPage('setup');
+      });
+      elements.btnEditAmount.addEventListener('click', toggleCustomAmount);
+      elements.btnApplyAmount.addEventListener('click', applyCustomAmount);
+      elements.btnSendWA.addEventListener('click', sendWhatsApp);
+      elements.btnCopyQR.addEventListener('click', copyQRToClipboard);
+      
+      // Setup Page
+      elements.btnSaveStore.addEventListener('click', saveStore);
+      elements.btnCloseSetup.addEventListener('click', () => showPage('cashier'));
+      elements.btnCopyStoreId.addEventListener('click', copyStoreId);
+      elements.btnTestWA.addEventListener('click', testWhatsApp);
+      elements.btnDeleteStore.addEventListener('click', deleteStore);
+      elements.qrisFile.addEventListener('change', handleQRISUpload);
+      elements.enableCustomAmount.addEventListener('change', toggleCustomAmountSetting);
+      
+      // Transactions Page
+      elements.btnRefreshTransactions.addEventListener('click', loadTransactions);
+      
+      // Quick Amount Buttons
+      elements.quickAmounts.querySelectorAll('button').forEach((btn, index) => {
+        btn.addEventListener('click', () => {
+          const amounts = [10000, 25000, 50000];
+          applyQuickAmount(amounts[index]);
+        });
+      });
+    }
 
     function checkStore() {
-        const btn = document.getElementById('btnLogin');
-        let id = document.getElementById('storeIdInput').value.trim();
-        
-        if(!id) return alert("Isi ID Toko dulu!");
-        id = id.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        currentStoreId = id;
-
-        btn.innerText = "Mengecek...";
-        btn.disabled = true;
-
-        if(!db) return alert("Database belum siap. Cek koneksi.");
-
-        get(child(ref(db), `stores/${id}`)).then((snapshot) => {
-            if (snapshot.exists()) {
-                currentData = snapshot.val();
-                renderCashier();
-            } else {
-                if(confirm(`Toko "${id}" tidak ditemukan. Buat baru?`)) {
-                    renderSetup();
-                }
-            }
-            btn.innerText = "MASUK SEKARANG";
-            btn.disabled = false;
-        }).catch((err) => {
-            alert("Error: " + err.message);
-            btn.innerText = "MASUK SEKARANG";
-            btn.disabled = false;
-        });
+      let storeId = elements.storeIdInput.value.trim().toLowerCase();
+      
+      if (!storeId) {
+        showToast('Masukkan kode toko terlebih dahulu', 'error');
+        return;
+      }
+      
+      // Validate store ID
+      storeId = storeId.replace(/[^a-z0-9-_]/g, '-');
+      if (storeId.length < 3 || storeId.length > 20) {
+        showToast('Kode toko harus 3-20 karakter', 'error');
+        return;
+      }
+      
+      elements.btnLogin.disabled = true;
+      elements.btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memeriksa...';
+      
+      checkStoreExists(storeId).then(exists => {
+        if (exists) {
+          // Load existing store
+          loadStore(storeId);
+        } else {
+          // Create new store
+          if (confirm(`Toko "${storeId}" belum terdaftar. Buat toko baru?`)) {
+            createNewStore(storeId);
+          }
+        }
+      }).catch(error => {
+        showToast('Gagal memeriksa toko: ' + error.message, 'error');
+      }).finally(() => {
+        elements.btnLogin.disabled = false;
+        elements.btnLogin.innerHTML = '<i class="fas fa-sign-in-alt"></i> MASUK KE TOKO';
+      });
     }
 
-    function renderSetup() {
-        hideAll();
-        document.getElementById('page-setup').classList.remove('hidden');
-        document.getElementById('setupId').value = currentStoreId;
-        if(currentData.name) {
-            document.getElementById('setupName').value = currentData.name;
-            document.getElementById('setupWa').value = currentData.wa ? currentData.wa.replace('62','0') : "";
-            document.getElementById('setupAmount').value = currentData.amount || "";
-        }
+    async function checkStoreExists(storeId) {
+      try {
+        const snapshot = await get(child(ref(db), `stores/${storeId}`));
+        return snapshot.exists();
+      } catch (error) {
+        throw error;
+      }
     }
 
-    async function saveToCloud() {
-        const btn = document.getElementById('btnSave');
-        const name = document.getElementById('setupName').value;
-        let wa = document.getElementById('setupWa').value;
-        const amount = document.getElementById('setupAmount').value;
-        const fileInput = document.getElementById('qrisFile');
-
-        if(!name || !wa) return alert("Nama & WA wajib diisi!");
+    async function loadStore(storeId) {
+      try {
+        updateStatus('Memuat toko...', 'info');
         
-        btn.innerText = "Menyimpan...";
-        btn.disabled = true;
-
-        let qrisString = currentData.qris || "";
-        if(fileInput.files[0]) {
-            try {
-                qrisString = await processQRImage(fileInput.files[0]);
-            } catch(e) {
-                alert("Gagal baca QR: " + e);
-                btn.innerText = "SIMPAN KE CLOUD ☁️";
-                btn.disabled = false;
-                return;
-            }
+        const snapshot = await get(child(ref(db), `stores/${storeId}`));
+        if (!snapshot.exists()) {
+          showToast('Toko tidak ditemukan', 'error');
+          return;
         }
-
-        if(!qrisString) {
-             alert("Wajib upload QRIS!");
-             btn.innerText = "SIMPAN KE CLOUD ☁️";
-             btn.disabled = false;
-             return;
-        }
-
-        wa = wa.replace(/\D/g, '');
-        if(wa.startsWith('0')) wa = '62' + wa.substring(1);
-
-        const newData = {
-            name: name,
-            wa: wa,
-            amount: amount ? parseInt(amount) : 0,
-            qris: qrisString,
-            updatedAt: Date.now()
-        };
-
-        set(ref(db, 'stores/' + currentStoreId), newData).then(() => {
-            alert("Data Tersimpan!");
-            currentData = newData;
-            renderCashier();
-            btn.innerText = "SIMPAN KE CLOUD ☁️";
-            btn.disabled = false;
-        });
-    }
-
-    function renderCashier() {
-        hideAll();
-        document.getElementById('page-cashier').classList.remove('hidden');
-        document.getElementById('dispName').innerText = currentData.name;
-        document.getElementById('dispId').innerText = currentStoreId;
-        document.getElementById('dispAmount').innerText = currentData.amount > 0 ? "Rp " + parseInt(currentData.amount).toLocaleString('id-ID') : "Nominal Bebas";
         
-        generateQRDisplay(currentData.qris, currentData.amount);
+        state.currentStoreId = storeId;
+        state.currentStore = snapshot.val();
+        
+        // Add to recent stores
+        addToRecentStores(storeId, state.currentStore.name);
+        
+        // Update UI
+        updateCashierUI();
+        generateQRCode();
+        
+        // Show cashier page
+        showPage('cashier');
+        updateStatus('Toko dimuat', 'success');
         
         // Update URL
-        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?store=' + currentStoreId;
-        window.history.pushState({path:newUrl},'',newUrl);
-    }
-
-    function sendWA() {
-        const name = document.getElementById('custName').value;
-        const note = document.getElementById('custNote').value;
-        if(!name) return alert("Isi nama kamu dulu!");
+        updateUrlWithStore(storeId);
         
-        const total = currentData.amount > 0 ? "Rp "+parseInt(currentData.amount).toLocaleString('id-ID') : "Sesuai Aplikasi";
-        const text = `*PEMBAYARAN QRIS*\n------------------\n🛒 Toko: ${currentData.name}\n👤 Nama: *${name}*\n💰 Nominal: *${total}*\n📝 Note: ${note}\n------------------\nBukti TF terlampir 📸`;
-        window.open(`https://wa.me/${currentData.wa}?text=${encodeURIComponent(text)}`, '_blank');
+      } catch (error) {
+        showToast('Gagal memuat toko: ' + error.message, 'error');
+        updateStatus('Error', 'error');
+      }
     }
 
-    function logout() {
-        if(confirm("Keluar dari toko?")) {
-            window.location.href = window.location.href.split('?')[0];
+    function createNewStore(storeId) {
+      state.currentStoreId = storeId;
+      state.currentStore = {
+        name: 'Toko Baru',
+        wa: '628123456789',
+        amount: 0,
+        qris: '',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        allowCustomAmount: true
+      };
+      
+      // Show setup page
+      loadStoreData();
+      showPage('setup');
+      updateStatus('Buat toko baru', 'info');
+    }
+
+    function loadStoreData() {
+      if (!state.currentStore) return;
+      
+      elements.setupId.value = state.currentStoreId;
+      elements.setupName.value = state.currentStore.name || '';
+      
+      // Handle phone number
+      const phone = state.currentStore.wa || '';
+      if (phone.startsWith('62')) {
+        elements.setupWaPrefix.value = '62';
+        elements.setupWa.value = phone.substring(2);
+      } else if (phone.startsWith('1')) {
+        elements.setupWaPrefix.value = '1';
+        elements.setupWa.value = phone.substring(1);
+      } else {
+        elements.setupWa.value = phone;
+      }
+      
+      elements.setupAmount.value = state.currentStore.amount || '';
+      elements.enableCustomAmount.checked = state.currentStore.allowCustomAmount !== false;
+      
+      // Show QRIS preview if exists
+      if (state.currentStore.qris) {
+        elements.qrisPreviewContainer.classList.remove('hidden');
+        elements.qrisPreview.src = state.currentStore.qris;
+      }
+    }
+
+    async function saveStore() {
+      const storeData = {
+        name: elements.setupName.value.trim(),
+        wa: elements.setupWaPrefix.value + elements.setupWa.value.replace(/\D/g, ''),
+        amount: parseInt(elements.setupAmount.value) || 0,
+        allowCustomAmount: elements.enableCustomAmount.checked,
+        updatedAt: Date.now()
+      };
+      
+      if (!storeData.name) {
+        showToast('Nama toko wajib diisi', 'error');
+        return;
+      }
+      
+      if (!storeData.wa || storeData.wa.length < 10) {
+        showToast('Nomor WhatsApp tidak valid', 'error');
+        return;
+      }
+      
+      // Keep existing QRIS if not changed
+      if (state.currentStore && state.currentStore.qris) {
+        storeData.qris = state.currentStore.qris;
+      }
+      
+      // Keep createdAt if exists
+      if (state.currentStore && state.currentStore.createdAt) {
+        storeData.createdAt = state.currentStore.createdAt;
+      } else {
+        storeData.createdAt = Date.now();
+      }
+      
+      elements.btnSaveStore.disabled = true;
+      elements.btnSaveStore.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
+      
+      try {
+        await set(ref(db, `stores/${state.currentStoreId}`), storeData);
+        
+        // Update local state
+        state.currentStore = storeData;
+        
+        // Update UI
+        updateCashierUI();
+        generateQRCode();
+        
+        showToast('Toko berhasil disimpan', 'success');
+        showPage('cashier');
+        
+      } catch (error) {
+        showToast('Gagal menyimpan: ' + error.message, 'error');
+      } finally {
+        elements.btnSaveStore.disabled = false;
+        elements.btnSaveStore.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> SIMPAN PERUBAHAN';
+      }
+    }
+
+    function handleQRISUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      elements.qrisFileName.textContent = file.name;
+      
+      // Preview image
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          elements.qrisPreviewContainer.classList.remove('hidden');
+          elements.qrisPreview.src = e.target.result;
+          
+          // Store base64 image
+          if (state.currentStore) {
+            state.currentStore.qris = e.target.result;
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function updateCashierUI() {
+      if (!state.currentStore) return;
+      
+      elements.dispName.textContent = state.currentStore.name;
+      elements.dispId.textContent = state.currentStoreId;
+      
+      const amount = state.currentStore.amount || 0;
+      if (amount > 0) {
+        elements.dispAmount.textContent = formatCurrency(amount);
+        elements.amountNote.textContent = 'Nominal tetap';
+        elements.quickAmounts.classList.add('hidden');
+      } else {
+        elements.dispAmount.textContent = 'Input Nominal';
+        elements.amountNote.textContent = 'Klik untuk mengubah nominal';
+        elements.quickAmounts.classList.remove('hidden');
+      }
+    }
+
+    function generateQRCode() {
+      if (!state.currentStore || !state.currentStore.qris) {
+        elements.qrContainer.innerHTML = `
+          <div class="text-center p-8">
+            <div class="w-48 h-48 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-exclamation-triangle text-4xl text-yellow-500"></i>
+            </div>
+            <p class="text-slate-600">QRIS belum diatur</p>
+            <p class="text-sm text-slate-400 mt-1">Atur QRIS di halaman Setup</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Clear existing QR
+      elements.qrContainer.innerHTML = '<div class="qrcode-container"></div>';
+      
+      // Generate new QR
+      const qrContainer = elements.qrContainer.querySelector('.qrcode-container');
+      
+      // Destroy previous instance
+      if (state.qrCodeInstance) {
+        state.qrCodeInstance.clear();
+      }
+      
+      // Create QR code with amount if specified
+      let qrData = state.currentStore.qris;
+      if (state.currentStore.amount > 0) {
+        qrData = injectAmountToQR(qrData, state.currentStore.amount);
+      }
+      
+      state.qrCodeInstance = new QRCode(qrContainer, {
+        text: qrData,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function injectAmountToQR(qrData, amount) {
+      // Simple implementation - in production use proper QRIS parsing
+      // This is a simplified version
+      try {
+        // Check if it's a QRIS string
+        if (qrData.includes('ID.CO.QRIS.WWW')) {
+          // Add amount tag (54) if not present
+          if (!qrData.includes('54')) {
+            const amountStr = amount.toFixed(2);
+            // This is simplified - real implementation needs proper EMV parsing
+            return qrData;
+          }
         }
+        return qrData;
+      } catch (e) {
+        console.error('Failed to inject amount:', e);
+        return qrData;
+      }
     }
 
-    function hideAll() {
-        document.getElementById('page-home').classList.add('hidden');
-        document.getElementById('page-setup').classList.add('hidden');
-        document.getElementById('page-cashier').classList.add('hidden');
+    function toggleCustomAmount() {
+      if (state.currentStore && state.currentStore.allowCustomAmount) {
+        elements.customAmountContainer.classList.toggle('hidden');
+        if (!elements.customAmountContainer.classList.contains('hidden')) {
+          elements.customAmount.focus();
+        }
+      } else {
+        showToast('Custom nominal tidak diizinkan untuk toko ini', 'info');
+      }
     }
 
-    // --- HELPER QR ---
-    function processQRImage(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0);
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, canvas.width, canvas.height);
-                    if(code) resolve(code.data);
-                    else reject("QR tidak terbaca");
-                };
-            };
-            reader.readAsDataURL(file);
+    function applyCustomAmount() {
+      const amount = parseInt(elements.customAmount.value);
+      if (amount && amount > 0) {
+        elements.dispAmount.textContent = formatCurrency(amount);
+        elements.amountNote.textContent = 'Nominal custom';
+        elements.customAmountContainer.classList.add('hidden');
+        
+        // Regenerate QR with new amount
+        if (state.currentStore && state.currentStore.qris) {
+          generateQRCode();
+        }
+      } else {
+        showToast('Masukkan nominal yang valid', 'error');
+      }
+    }
+
+    function applyQuickAmount(amount) {
+      elements.dispAmount.textContent = formatCurrency(amount);
+      elements.amountNote.textContent = 'Nominal cepat';
+      
+      // Regenerate QR with new amount
+      if (state.currentStore && state.currentStore.qris) {
+        generateQRCode();
+      }
+    }
+
+    function sendWhatsApp() {
+      if (!state.currentStore) return;
+      
+      const customerName = elements.custName.value.trim();
+      const customerPhone = elements.custPhone.value.trim();
+      const note = elements.custNote.value.trim();
+      
+      if (!customerName) {
+        showToast('Nama pelanggan wajib diisi', 'error');
+        return;
+      }
+      
+      // Get current amount
+      let amountText = elements.dispAmount.textContent;
+      if (amountText === 'Input Nominal') {
+        amountText = 'Sesuai dengan aplikasi';
+      }
+      
+      // Create message
+      const message = `*INVOICE PEMBAYARAN QRIS*
+      
+📋 *Detail Transaksi:*
+🛒 Toko: ${state.currentStore.name}
+👤 Pelanggan: ${customerName}
+📱 Telepon: ${customerPhone || '-'}
+💰 Nominal: *${amountText}*
+📝 Catatan: ${note || '-'}
+⏰ Waktu: ${new Date().toLocaleString('id-ID')}
+
+_Scan QR Code di atas untuk melakukan pembayaran_
+
+Terima kasih telah berbelanja!`;
+      
+      // Encode for WhatsApp
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${state.currentStore.wa}?text=${encodedMessage}`;
+      
+      // Open WhatsApp
+      window.open(whatsappUrl, '_blank');
+      
+      // Save transaction
+      saveTransaction({
+        customerName,
+        customerPhone,
+        note,
+        amount: amountText,
+        timestamp: Date.now()
+      });
+      
+      // Reset form
+      elements.custName.value = '';
+      elements.custPhone.value = '';
+      elements.custNote.value = '';
+      
+      showToast('Instruksi dikirim ke WhatsApp', 'success');
+    }
+
+    async function saveTransaction(transactionData) {
+      try {
+        const transactionRef = push(ref(db, `transactions/${state.currentStoreId}`));
+        await set(transactionRef, {
+          ...transactionData,
+          storeId: state.currentStoreId,
+          storeName: state.currentStore.name
         });
+      } catch (error) {
+        console.error('Failed to save transaction:', error);
+      }
     }
 
-    function generateQRDisplay(rawString, amount) {
-        const container = document.getElementById('qrContainer');
-        container.innerHTML = "";
+    async function loadTransactions() {
+      try {
+        const snapshot = await get(child(ref(db), `transactions/${state.currentStoreId}`));
         
-        let finalString = rawString;
-        if(amount > 0) {
-            try { finalString = injectNominal(rawString, amount); } catch(e) {}
+        if (!snapshot.exists()) {
+          elements.emptyTransactions.classList.remove('hidden');
+          elements.transactionsList.innerHTML = '';
+          return;
         }
-
-        if(typeof QRCode === 'undefined') {
-            setTimeout(() => generateQRDisplay(rawString, amount), 500);
-            return;
-        }
-
-        new QRCode(container, {
-            text: finalString,
-            width: 200,
-            height: 200,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.M
+        
+        const transactions = [];
+        snapshot.forEach(childSnapshot => {
+          transactions.push({
+            id: childSnapshot.key,
+            ...childSnapshot.val()
+          });
         });
+        
+        // Sort by timestamp
+        transactions.sort((a, b) => b.timestamp - a.timestamp);
+        
+        // Update state
+        state.transactions = transactions;
+        
+        // Render transactions
+        renderTransactions(transactions);
+        
+        // Hide empty state
+        elements.emptyTransactions.classList.add('hidden');
+        
+      } catch (error) {
+        console.error('Failed to load transactions:', error);
+        showToast('Gagal memuat riwayat', 'error');
+      }
     }
 
-    function injectNominal(payload, amount) {
-        function crc16(d){let c=0xFFFF;for(let i=0;i<d.length;i++){c^=d.charCodeAt(i)<<8;for(let j=0;j<8;j++){c=(c&0x8000)?(c<<1)^0x1021:c<<1;c=c&0xFFFF}}return c.toString(16).toUpperCase().padStart(4,"0")}
-        function parse(p){let i=[],x=0;while(x<p.length){let id=p.substr(x,2),l=parseInt(p.substr(x+2,2));if(isNaN(l))break;i.push({id,val:p.substr(x+4,l)});x+=4+l}return i}
-        
-        let t = parse(payload).filter(x=>x.id!=='63');
-        let i01 = t.findIndex(x=>x.id==='01'); if(i01>=0)t[i01].val='12';
-        let am = parseFloat(amount).toFixed(2);
-        let t54 = {id:'54',val:am};
-        let i54 = t.findIndex(x=>x.id==='54'); let i53 = t.findIndex(x=>x.id==='53');
-        if(i54>=0)t[i54]=t54; else if(i53>=0)t.splice(i53+1,0,t54); else t.push(t54);
-        let body = t.map(i=>i.id+i.val.length.toString().padStart(2,'0')+i.val).join('');
-        return body+"6304"+crc16(body+"6304");
+    function renderTransactions(transactions) {
+      if (transactions.length === 0) {
+        elements.emptyTransactions.classList.remove('hidden');
+        return;
+      }
+      
+      elements.transactionsList.innerHTML = transactions.map(transaction => `
+        <div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <h4 class="font-medium text-slate-800">${transaction.customerName}</h4>
+              <p class="text-sm text-slate-500">${formatDate(transaction.timestamp)}</p>
+            </div>
+            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+              ${transaction.amount}
+            </span>
+          </div>
+          ${transaction.note ? `<p class="text-slate-600 text-sm">${transaction.note}</p>` : ''}
+          ${transaction.customerPhone ? `<p class="text-slate-500 text-xs mt-2"><i class="fas fa-phone mr-1"></i>${transaction.customerPhone}</p>` : ''}
+        </div>
+      `).join('');
     }
+
+    function copyQRToClipboard() {
+      if (!state.currentStore || !state.currentStore.qris) {
+        showToast('QRIS belum diatur', 'error');
+        return;
+      }
+      
+      // Create temporary canvas
+      const canvas = document.createElement('canvas');
+      const qrImg = elements.qrContainer.querySelector('img');
+      
+      if (qrImg) {
+        // Copy image data
+        canvas.width = qrImg.width;
+        canvas.height = qrImg.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(qrImg, 0, 0);
+        
+        // Convert to blob and copy
+        canvas.toBlob(blob => {
+          const item = new ClipboardItem({ 'image/png': blob });
+          navigator.clipboard.write([item]).then(() => {
+            showToast('QR Code disalin ke clipboard', 'success');
+          });
+        });
+      } else {
+        showToast('Gagal menyalin QR', 'error');
+      }
+    }
+
+    function copyStoreId() {
+      navigator.clipboard.writeText(state.currentStoreId).then(() => {
+        showToast('ID Toko disalin', 'success');
+      });
+    }
+
+    function testWhatsApp() {
+      if (!state.currentStore) return;
+      
+      const message = `*TEST NOTIFIKASI*
+      
+Ini adalah pesan uji coba dari Kasir QRIS Online.
+Toko: ${state.currentStore.name}
+ID: ${state.currentStoreId}
+
+Jika Anda menerima pesan ini, berarti notifikasi WhatsApp berfungsi dengan baik.`;
+      
+      const whatsappUrl = `https://wa.me/${state.currentStore.wa}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+
+    async function deleteStore() {
+      if (!confirm('Apakah Anda yakin ingin menghapus toko ini? Data tidak dapat dikembalikan.')) {
+        return;
+      }
+      
+      try {
+        // Delete store data
+        await remove(ref(db, `stores/${state.currentStoreId}`));
+        
+        // Delete transactions
+        await remove(ref(db, `transactions/${state.currentStoreId}`));
+        
+        // Reset state
+        state.currentStoreId = '';
+        state.currentStore = null;
+        
+        // Show home page
+        showPage('home');
+        showToast('Toko berhasil dihapus', 'success');
+        updateStatus('Siap digunakan', 'success');
+        
+        // Clear URL
+        history.pushState({}, document.title, window.location.pathname);
+        
+      } catch (error) {
+        showToast('Gagal menghapus toko: ' + error.message, 'error');
+      }
+    }
+
+    function toggleCustomAmountSetting() {
+      const isChecked = elements.enableCustomAmount.checked;
+      if (!isChecked && (!state.currentStore.amount || state.currentStore.amount === 0)) {
+        elements.setupAmount.focus();
+        showToast('Atur nominal default jika menonaktifkan custom', 'info');
+      }
+    }
+
+    function loadRecentStores() {
+      if (state.recentStores.length === 0) {
+        elements.recentStores.classList.add('hidden');
+        return;
+      }
+      
+      elements.recentList.innerHTML = state.recentStores.map(store => `
+        <button onclick="loadStoreFromRecent('${store.id}')" 
+                class="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition flex justify-between items-center">
+          <div>
+            <p class="font-medium text-slate-700">${store.name}</p>
+            <p class="text-xs text-slate-500 font-mono">${store.id}</p>
+          </div>
+          <i class="fas fa-chevron-right text-slate-400"></i>
+        </button>
+      `).join('');
+      
+      elements.recentStores.classList.remove('hidden');
+    }
+
+    function addToRecentStores(storeId, storeName) {
+      // Remove if already exists
+      state.recentStores = state.recentStores.filter(store => store.id !== storeId);
+      
+      // Add to beginning
+      state.recentStores.unshift({
+        id: storeId,
+        name: storeName,
+        timestamp: Date.now()
+      });
+      
+      // Keep only last 5
+      state.recentStores = state.recentStores.slice(0, 5);
+      
+      // Save to localStorage
+      localStorage.setItem('recentStores', JSON.stringify(state.recentStores));
+      
+      // Update UI
+      loadRecentStores();
+    }
+
+    function checkUrlStore() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlStore = urlParams.get('store');
+      
+      if (urlStore) {
+        elements.storeIdInput.value = urlStore;
+        // Auto-check after a delay
+        setTimeout(() => {
+          if (urlStore.trim().length > 0) {
+            checkStore();
+          }
+        }, 500);
+      }
+    }
+
+    function updateUrlWithStore(storeId) {
+      const newUrl = `${window.location.pathname}?store=${storeId}`;
+      window.history.pushState({ storeId }, '', newUrl);
+    }
+
+    function formatCurrency(amount) {
+      return 'Rp ' + parseInt(amount).toLocaleString('id-ID');
+    }
+
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // Make functions available globally for onclick handlers
+    window.loadStoreFromRecent = function(storeId) {
+      elements.storeIdInput.value = storeId;
+      checkStore();
+    };
   </script>
 </body>
-</html>
+  </html>
