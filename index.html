@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Toko V7 - Cart & Auth</title>
+  <title>Toko V7.1 - Siap Pakai</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
@@ -28,7 +28,7 @@
             </div>
             <div>
                 <h1 class="text-sm font-bold leading-tight" id="shopNameDisplay">Loading...</h1>
-                <p class="text-[10px] text-slate-500" id="userNameDisplay">Tamu</p>
+                <p class="text-[10px] text-slate-500" id="userNameDisplay">Menunggu Login...</p>
             </div>
         </div>
         
@@ -59,11 +59,15 @@
           <button onclick="window.loginGuest()" class="w-full bg-slate-100 py-3.5 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition">
               Lanjut sebagai Tamu
           </button>
+          
+          <p class="text-[10px] text-slate-400 mt-6 text-center max-w-xs">
+              Pastikan "Google Sign-in" sudah diaktifkan di Firebase Console agar tombol Google berfungsi.
+          </p>
       </div>
 
       <div id="page-shop">
         <div id="productGrid" class="grid grid-cols-2 gap-3 pb-24">
-            <div class="col-span-2 text-center py-20">
+            <div class="col-span-2 text-center py-20 text-slate-400">
                 <div class="loader mx-auto mb-2"></div> Memuat Produk...
             </div>
         </div>
@@ -118,7 +122,9 @@
 
             <div class="bg-white border p-4 rounded-xl mb-6 relative overflow-hidden">
                 <p class="text-xs font-bold text-slate-400 mb-3">SCAN QRIS DI BAWAH</p>
-                <div id="qrContainer" class="flex justify-center min-h-[200px]"></div>
+                <div id="qrContainer" class="flex justify-center min-h-[200px] items-center">
+                    <p class="text-xs text-slate-300">QR Loading...</p>
+                </div>
                 <p class="text-[10px] text-slate-400 mt-3" id="qrNote">Nominal otomatis masuk</p>
             </div>
 
@@ -138,14 +144,18 @@
     </div>
 
     <div id="adminPanel" class="fixed inset-0 bg-slate-50 z-[70] hidden overflow-y-auto">
-        <div class="sticky top-0 bg-white p-4 shadow-sm flex justify-between items-center">
+        <div class="sticky top-0 bg-white p-4 shadow-sm flex justify-between items-center z-10">
             <h2 class="font-bold text-lg">Admin Dashboard</h2>
             <button onclick="document.getElementById('adminPanel').classList.add('hidden')" class="text-sm font-bold text-red-500">Tutup</button>
         </div>
         
-        <div id="adminLogin" class="p-10 text-center">
-            <input type="password" id="adminPin" class="w-full p-4 rounded-xl border text-center text-xl mb-4" placeholder="PIN Admin" maxlength="6">
-            <button onclick="window.loginAdmin()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">MASUK</button>
+        <div id="adminLoginForm" class="p-10 text-center mt-20">
+            <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-lock text-slate-500 text-2xl"></i>
+            </div>
+            <h3 class="font-bold text-lg mb-4">Akses Admin</h3>
+            <input type="password" id="adminPin" class="w-full p-4 rounded-xl border text-center text-xl mb-4 bg-white shadow-sm" placeholder="Masukkan PIN" maxlength="6">
+            <button onclick="window.loginAdmin()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold shadow-lg">MASUK</button>
         </div>
 
         <div id="adminContent" class="p-4 space-y-6 hidden">
@@ -155,8 +165,11 @@
                 <input type="number" id="setFee" class="w-full p-2 border rounded mb-2 text-sm" placeholder="Biaya Admin (Rp)">
                 
                 <p class="text-xs font-bold mt-2 mb-1">Upload QRIS</p>
+                <div class="bg-blue-50 p-2 rounded text-[10px] text-blue-600 mb-2">
+                    Gunakan QRIS Merchant (Dana Bisnis/Shopee Partner) agar nominal otomatis masuk.
+                </div>
                 <input type="file" id="qrisUpload" class="text-xs w-full mb-2">
-                <textarea id="setQris" class="w-full p-2 text-[10px] bg-slate-100 rounded" rows="2" readonly></textarea>
+                <textarea id="setQris" class="w-full p-2 text-[10px] bg-slate-100 rounded font-mono" rows="2" readonly placeholder="String QRIS..."></textarea>
                 
                 <button onclick="window.saveSettings()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-sm font-bold mt-2">SIMPAN SETTINGS</button>
             </div>
@@ -175,8 +188,10 @@
 
             <div class="bg-white p-4 rounded-xl shadow-sm">
                 <h3 class="font-bold text-sm mb-3 text-slate-500 uppercase">Daftar Produk</h3>
-                <div id="adminProdList" class="space-y-2"></div>
+                <div id="adminProdList" class="space-y-2 max-h-60 overflow-y-auto"></div>
             </div>
+            
+            <div class="h-10"></div>
         </div>
     </div>
 
@@ -192,15 +207,16 @@
     import { getDatabase, ref, set, get, child, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // --- 1. CONFIG FIREBASE (ISI DENGAN DATA KAMU) ---
+    // --- 1. CONFIG FIREBASE (SUDAH DIPERBAIKI) ---
     const firebaseConfig = {
-      apiKey: "ISI_API_KEY_DISINI",
-      authDomain: "ISI_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://ISI_PROJECT_ID-default-rtdb.firebaseio.com",
-      projectId: "ISI_PROJECT_ID",
-      storageBucket: "ISI_PROJECT_ID.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
+      apiKey: "AIzaSyAUL2WkPlJLb8wHcSKQ_QA7GSZ5DGw94Ng",
+      authDomain: "kasir-online-c22bd.firebaseapp.com",
+      databaseURL: "https://kasir-online-c22bd-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "kasir-online-c22bd",
+      storageBucket: "kasir-online-c22bd.firebasestorage.app",
+      messagingSenderId: "1052259146588",
+      appId: "1:1052259146588:web:a3f4e9c31982cbfa2dff99",
+      measurementId: "G-QR6HPRX459"
     };
 
     const STORE_ID = "toko-utama";
@@ -218,7 +234,6 @@
         db = getDatabase(app);
         auth = getAuth(app);
         
-        // Cek Login Status
         onAuthStateChanged(auth, (u) => {
             if (u) {
                 user = u;
@@ -231,16 +246,20 @@
             }
         });
 
-    } catch(e) { console.error(e); alert("Firebase Error"); }
+    } catch(e) { console.error(e); alert("Firebase Config Error: " + e.message); }
 
     // --- AUTH ---
     window.loginGoogle = () => {
         const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider).catch(e => toastr.error(e.message));
+        signInWithPopup(auth, provider).catch(e => {
+            alert("Login Google Gagal: " + e.message + "\nPastikan Authentication Google sudah aktif di Firebase Console.");
+        });
     };
     
     window.loginGuest = () => {
-        signInAnonymously(auth).catch(e => toastr.error(e.message));
+        signInAnonymously(auth).catch(e => {
+            alert("Login Tamu Gagal: " + e.message + "\nPastikan Anonymous Auth aktif di Firebase.");
+        });
     };
 
     // --- STORE DATA ---
@@ -251,11 +270,10 @@
                 storeData = snap.val();
                 if(!storeData.products) storeData.products = [];
             } else {
-                // First Run Setup
                 storeData = { name: "Toko Baru", fee: 0, products: [] };
             }
             renderStore();
-        } catch(e) { toastr.error("Gagal load data"); }
+        } catch(e) { toastr.error("Koneksi Database Gagal"); }
     }
 
     function renderStore() {
@@ -287,7 +305,10 @@
                 </div>`;
             });
         } else {
-            grid.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-10">Belum ada produk</div>`;
+            grid.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-10">
+                <i class="fas fa-box-open text-3xl mb-2 opacity-50"></i><br>
+                Belum ada produk.<br>Login Admin (Gembok) untuk tambah.
+            </div>`;
         }
         updateCartBadge();
     }
@@ -304,6 +325,7 @@
             cart.push({ index, name: p.name, price: parseInt(p.price), qty: 1, stock: parseInt(p.stock) });
         }
         saveCart();
+        toastr.success("Masuk keranjang");
     };
 
     window.updateQty = (idx, change) => {
@@ -379,7 +401,7 @@
     window.processCheckout = () => {
         if(cart.length === 0) return toastr.warning("Keranjang kosong!");
         
-        window.toggleCart(); // Close cart
+        window.toggleCart();
         const subtotal = cart.reduce((a, b) => a + b.qty * b.price, 0);
         const fee = parseInt(storeData.fee || 0);
         const total = subtotal + fee;
@@ -405,24 +427,19 @@
         const note = document.getElementById('qrNote');
 
         if(!qris) {
-            container.innerHTML = "QRIS belum disetting";
+            container.innerHTML = `<span class='text-xs text-red-500'>QRIS Belum diupload Admin</span>`;
             return;
         }
 
-        // DETEKSI DANA PERSONAL (URL) VS MERCHANT (HEX)
-        if(qris.startsWith("http")) {
-            // QR PERSONAL (Tidak bisa inject)
-            note.innerText = "⚠️ Masukkan nominal manual di aplikasi DANA";
+        if(qris.startsWith("http") || qris.length < 50) {
+            note.innerText = "⚠️ Nominal wajib input manual (QR Personal)";
             note.classList.add("text-orange-500");
         } else {
-            // QR MERCHANT (Bisa inject)
             try {
                 qris = injectAmount(qris, amount);
                 note.innerText = "Nominal otomatis masuk";
                 note.classList.remove("text-orange-500");
-            } catch(e) {
-                console.log("Static fallback");
-            }
+            } catch(e) { console.log("Static"); }
         }
 
         new QRCode(container, {
@@ -464,7 +481,6 @@
         const file = document.getElementById('proofFile').files[0];
         if(!file) return toastr.warning("Upload bukti transfer!");
 
-        // Build Message
         let itemsList = "";
         cart.forEach(c => {
             itemsList += `▪️ ${c.name} (${c.qty}x) - Rp ${(c.qty*c.price).toLocaleString()}\n`;
@@ -479,19 +495,17 @@
         const url = `https://wa.me/${OWNER_WA}?text=${encodeURIComponent(msg)}`;
         window.open(url, '_blank');
         
-        // Clear Cart & Reduce Stock (Client Side Simulation)
+        // Clear & Reload
         cart = [];
         saveCart();
-        
-        // Refresh page to update stock visual (Idealnya update stock ke firebase disini, tapi perlu logic lebih kompleks)
         setTimeout(() => window.location.reload(), 2000);
     };
 
-    // --- ADMIN ---
+    // --- ADMIN PANEL ---
     window.openAdmin = () => document.getElementById('adminPanel').classList.remove('hidden');
     window.loginAdmin = () => {
         if(document.getElementById('adminPin').value === "110603") {
-            document.getElementById('adminLogin').classList.add('hidden');
+            document.getElementById('adminLoginForm').classList.add('hidden');
             document.getElementById('adminContent').classList.remove('hidden');
             loadAdminData();
         } else toastr.error("PIN Salah");
@@ -510,14 +524,13 @@
         storeData.products.forEach((p, i) => {
             el.innerHTML += `
             <div class="flex justify-between p-2 bg-slate-50 rounded border mb-1 items-center">
-                <span class="text-xs truncate w-1/2">${p.name}</span>
-                <span class="text-xs font-bold w-16">Stok: ${p.stock}</span>
-                <button onclick="window.delProd(${i})" class="text-red-500 font-bold text-xs">Hapus</button>
+                <span class="text-xs truncate w-1/2 font-bold">${p.name}</span>
+                <span class="text-xs text-slate-500">Stok: ${p.stock}</span>
+                <button onclick="window.delProd(${i})" class="text-red-500 font-bold text-xs bg-white border px-2 py-1 rounded">Hapus</button>
             </div>`;
         });
     }
 
-    // QRIS Upload
     document.getElementById('qrisUpload').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -533,8 +546,8 @@
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
                 if(code) {
                     document.getElementById('setQris').value = code.data;
-                    toastr.success("QRIS Terbaca!");
-                } else toastr.error("Gagal baca QR");
+                    toastr.success("QRIS Berhasil Dibaca!");
+                } else toastr.error("QR tidak terbaca");
             };
             img.src = ev.target.result;
         };
@@ -546,7 +559,7 @@
         storeData.fee = parseInt(document.getElementById('setFee').value) || 0;
         storeData.qris = document.getElementById('setQris').value;
         await update(ref(db, `stores/${STORE_ID}`), storeData);
-        toastr.success("Saved!");
+        toastr.success("Tersimpan!");
         location.reload();
     };
 
@@ -556,7 +569,7 @@
         const stock = document.getElementById('newProdStock').value;
         const desc = document.getElementById('newProdDesc').value;
 
-        if(!name || !price) return toastr.warning("Data kurang lengkap");
+        if(!name || !price) return toastr.warning("Data kurang");
 
         storeData.products.push({
             name, 
@@ -567,13 +580,12 @@
         
         await update(ref(db, `stores/${STORE_ID}`), storeData);
         toastr.success("Produk Ditambah");
-        renderAdminList();
         
-        // Reset form
         document.getElementById('newProdName').value = "";
         document.getElementById('newProdPrice').value = "";
         document.getElementById('newProdStock').value = "";
         document.getElementById('newProdDesc').value = "";
+        renderAdminList();
     };
 
     window.delProd = async (i) => {
@@ -584,7 +596,7 @@
         }
     };
 
-    // Global Expose
+    // Expose Global
     window.toggleCart = window.toggleCart;
     window.addToCart = window.addToCart;
     window.updateQty = window.updateQty;
