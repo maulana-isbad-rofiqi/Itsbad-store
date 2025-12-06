@@ -3,730 +3,189 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Kasir QRIS Online</title>
+  <title>Toko Online & QRIS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    * {
-      box-sizing: border-box;
-      font-family: 'Inter', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-    body { 
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-    }
-    .loader {
-      border: 3px solid #f3f3f3;
-      border-radius: 50%;
-      border-top: 3px solid #6366f1;
-      width: 16px;
-      height: 16px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .qrcode-container {
-      position: relative;
-      padding: 20px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-    .pulse {
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.7; }
-      100% { opacity: 1; }
-    }
-    .slide-in {
-      animation: slideIn 0.3s ease-out;
-    }
-    @keyframes slideIn {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .amount-button {
-      transition: all 0.2s;
-    }
-    .amount-button:active {
-      transform: scale(0.95);
-    }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    .product-card {
-      transition: all 0.3s ease;
-    }
-    .product-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-    .admin-badge {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    }
-    .password-input {
-      letter-spacing: 2px;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+    .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #6366f1; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    #qrContainer img { margin: 0 auto; display: block; border: 4px solid white; border-radius: 8px; }
   </style>
 </head>
-<body class="flex justify-center items-center min-h-screen p-4">
-  
-  <div class="w-full max-w-md bg-white shadow-2xl rounded-3xl overflow-hidden min-h-[90vh] flex flex-col">
+<body class="flex justify-center min-h-screen text-slate-800">
+
+  <div class="w-full max-w-md bg-white shadow-2xl min-h-screen relative flex flex-col">
     
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 pt-8">
-      <div class="flex justify-between items-center mb-2">
-        <div class="flex-1">
-          <h1 class="text-2xl font-bold tracking-tight">Kasir QRIS</h1>
-          <p class="text-white/80 text-sm" id="headerSubtitle">Solusi Pembayaran Digital</p>
+    <div class="bg-indigo-600 text-white p-5 pt-8 z-10 sticky top-0 shadow-md">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 id="shopTitle" class="text-xl font-bold">Loading Toko...</h1>
+          <p class="text-indigo-200 text-xs">Belanja Mudah & Cepat</p>
         </div>
-        <div class="bg-white/20 px-3 py-1.5 rounded-full text-xs backdrop-blur-md flex items-center gap-2 border border-white/30">
-          <div id="loaderIcon" class="loader"></div> 
-          <span id="statusText" class="font-semibold">Menyiapkan...</span>
+        
+        <div class="flex items-center gap-2">
+            <div id="loaderIcon" class="loader"></div>
+            <button onclick="window.openAdmin()" class="bg-indigo-700 hover:bg-indigo-800 p-2 rounded-full text-xs transition shadow-lg">
+                <i class="fas fa-lock"></i>
+            </button>
         </div>
-      </div>
-      
-      <!-- Navigation - Guest Mode -->
-      <div id="navGuest" class="flex mt-6 bg-white/10 rounded-xl p-1">
-        <button id="navHome" class="flex-1 py-2 rounded-lg font-medium transition-all text-center active-page">
-          <i class="fas fa-store mr-2"></i>Toko
-        </button>
-        <button id="navProducts" class="flex-1 py-2 rounded-lg font-medium transition-all text-center">
-          <i class="fas fa-box mr-2"></i>Produk
-        </button>
-        <button id="navAdminAccess" class="flex-1 py-2 rounded-lg font-medium transition-all text-center">
-          <i class="fas fa-user-shield mr-2"></i>Admin
-        </button>
-      </div>
-
-      <!-- Navigation - Admin Mode -->
-      <div id="navAdmin" class="hidden mt-6 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-xl p-1 border border-amber-400/30">
-        <button id="navAdminDashboard" class="flex-1 py-2 rounded-lg font-medium transition-all text-center bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-          <i class="fas fa-crown mr-2"></i>Admin
-        </button>
-        <button id="navAdminProducts" class="flex-1 py-2 rounded-lg font-medium transition-all text-center text-amber-100">
-          <i class="fas fa-boxes mr-2"></i>Kelola Produk
-        </button>
-        <button id="navAdminSettings" class="flex-1 py-2 rounded-lg font-medium transition-all text-center text-amber-100">
-          <i class="fas fa-cog mr-2"></i>Settings
-        </button>
       </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="flex-1 overflow-y-auto pb-24 no-scrollbar p-0">
-      
-      <!-- Page: Home (Store Selection) -->
-      <div id="page-home" class="slide-in">
-        <div class="p-6">
-          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-3xl border border-blue-100 shadow-sm mb-6 text-center">
-            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <i class="fas fa-qrcode text-3xl text-indigo-600"></i>
+    <div class="flex-1 overflow-y-auto pb-24 p-4 bg-slate-50 relative">
+
+      <div id="page-shop">
+        
+        <h3 class="font-bold text-slate-700 mb-3 flex items-center gap-2">
+            <i class="fas fa-box-open text-indigo-500"></i> Pilih Produk
+        </h3>
+        <div id="productGrid" class="grid grid-cols-2 gap-3 mb-6">
+            <div class="col-span-2 text-center py-10 text-slate-400">
+                <div class="loader mx-auto mb-2"></div>
+                Memuat Produk...
             </div>
-            <h2 class="font-bold text-xl text-slate-800 mb-2">Selamat Datang</h2>
-            <p class="text-slate-600 mb-6">Masukkan kode toko untuk mulai transaksi</p>
-            
-            <div class="relative mb-4">
-              <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-                <i class="fas fa-hashtag"></i>
-              </div>
-              <input type="text" id="storeIdInput" 
-                     placeholder="misal: toko-anda" 
-                     class="w-full pl-12 p-4 text-left bg-white border-2 border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
-                     maxlength="20">
-            </div>
-            
-            <button id="btnLogin" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
-              <i class="fas fa-sign-in-alt"></i>
-              MASUK KE TOKO
-            </button>
-            
-            <div class="mt-6 text-xs text-slate-500">
-              <p><i class="fas fa-info-circle mr-1"></i> Belum punya toko? Masukkan kode baru untuk membuat</p>
-            </div>
-          </div>
-          
-          <!-- Recent Stores -->
-          <div id="recentStores" class="hidden">
-            <h3 class="font-semibold text-slate-700 mb-3">Toko Terakhir</h3>
-            <div id="recentList" class="space-y-2"></div>
-          </div>
         </div>
-      </div>
 
-      <!-- Page: Cashier (Guest Mode) -->
-      <div id="page-cashier" class="hidden">
-        <div class="p-6">
-          <!-- Store Info -->
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h2 id="dispName" class="font-bold text-xl text-slate-800">...</h2>
-              <div class="flex items-center gap-2 mt-1">
-                <span class="bg-slate-100 px-3 py-1 rounded-full text-xs text-slate-600 font-mono">
-                  ID: <span id="dispId">...</span>
-                </span>
-                <span id="storeStatus" class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                  <i class="fas fa-circle text-[8px]"></i> Aktif
-                </span>
-              </div>
+        <div id="checkoutArea" class="hidden bg-white p-5 rounded-2xl shadow-lg border border-indigo-100 mb-6">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+                <h3 class="font-bold text-lg text-slate-800">Checkout</h3>
+                <button onclick="window.resetSelection()" class="text-xs text-red-500 font-bold hover:bg-red-50 px-2 py-1 rounded">Batal</button>
             </div>
-            <div class="flex gap-2">
-              <div id="adminIndicator" class="hidden">
-                <span class="admin-badge px-3 py-1 rounded-full text-xs font-bold text-white">
-                  <i class="fas fa-crown mr-1"></i>ADMIN
-                </span>
-              </div>
-            </div>
-          </div>
 
-          <!-- QR Display -->
-          <div class="bg-gradient-to-br from-slate-50 to-white p-8 rounded-3xl shadow-lg border border-slate-100 mb-6">
-            <div class="text-center mb-4">
-              <h3 class="font-semibold text-slate-700 mb-1">Scan QRIS untuk Bayar</h3>
-              <p class="text-sm text-slate-500">Gunakan aplikasi bank/mobile banking</p>
-            </div>
-            
-            <div id="qrContainer" class="flex justify-center mb-6">
-              <div class="qrcode-container">
-                <div class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded-lg">
-                  <i class="fas fa-qrcode text-4xl text-gray-300"></i>
+            <div class="space-y-2 text-sm mb-4">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Item:</span>
+                    <span id="billItemName" class="font-bold text-slate-700">-</span>
                 </div>
-              </div>
-            </div>
-            
-            <!-- Amount Display -->
-            <div class="text-center mb-6">
-              <p class="text-sm text-slate-500 mb-2">Total Pembayaran</p>
-              <div class="flex items-center justify-center gap-2">
-                <h2 id="dispAmount" class="text-3xl font-bold text-slate-800">Rp 0</h2>
-                <button id="btnEditAmount" class="text-indigo-600 hover:text-indigo-800">
-                  <i class="fas fa-edit"></i>
-                </button>
-              </div>
-              <p id="amountNote" class="text-xs text-slate-400 mt-2"></p>
-            </div>
-          </div>
-
-          <!-- Product Selection -->
-          <div id="productSelection" class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="font-semibold text-slate-700">Pilih Produk</h3>
-              <span id="productCount" class="bg-slate-100 text-slate-600 px-2 py-1 rounded-full text-xs">0 produk</span>
-            </div>
-            <div id="productsGrid" class="grid grid-cols-2 gap-3">
-              <!-- Products will be loaded here -->
-            </div>
-            <div id="noProducts" class="text-center py-8 bg-slate-50 rounded-xl">
-              <i class="fas fa-box-open text-3xl text-slate-300 mb-3"></i>
-              <p class="text-slate-500">Belum ada produk</p>
-              <p class="text-sm text-slate-400 mt-1">Admin toko dapat menambahkan produk</p>
-            </div>
-          </div>
-
-          <!-- Customer Form -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Nama Pelanggan</label>
-              <input type="text" id="custName" 
-                     class="w-full p-3.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                     placeholder="Nama lengkap">
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Nomor WhatsApp</label>
-              <input type="tel" id="custPhone" 
-                     class="w-full p-3.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                     placeholder="0812xxxxxxx">
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">Catatan (opsional)</label>
-              <textarea id="custNote" rows="2"
-                        class="w-full p-3.5 border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        placeholder="Contoh: Beli kopi 2 pcs"></textarea>
-            </div>
-            
-            <button id="btnSendWA" 
-                    class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-3">
-              <i class="fab fa-whatsapp text-2xl"></i>
-              <span>Kirim Instruksi Pembayaran</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Page: Products (Guest View) -->
-      <div id="page-products" class="hidden">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <div>
-              <h3 class="font-bold text-xl text-slate-700 flex items-center gap-3">
-                <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-box text-indigo-600"></i>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Harga:</span>
+                    <span id="billItemPrice" class="font-mono">-</span>
                 </div>
-                <span>Daftar Produk</span>
-              </h3>
-              <p class="text-slate-500 text-sm mt-1">Pilih produk untuk transaksi</p>
-            </div>
-            <span id="productCount2" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium">0 produk</span>
-          </div>
-          
-          <div id="productsList" class="space-y-3">
-            <!-- Products will be loaded here -->
-          </div>
-          
-          <div id="noProducts2" class="text-center py-16">
-            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-box-open text-3xl text-slate-400"></i>
-            </div>
-            <p class="text-slate-500 mb-2">Belum ada produk tersedia</p>
-            <p class="text-sm text-slate-400">Admin toko dapat menambahkan produk</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Page: Admin Login -->
-      <div id="page-admin-login" class="hidden">
-        <div class="p-6">
-          <div class="text-center mb-8">
-            <div class="w-24 h-24 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <i class="fas fa-crown text-3xl text-white"></i>
-            </div>
-            <h2 class="font-bold text-2xl text-slate-800 mb-2">Admin Area</h2>
-            <p class="text-slate-600">Masukkan sandi admin untuk mengelola toko</p>
-          </div>
-          
-          <div class="space-y-6">
-            <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-6 rounded-2xl border border-amber-100">
-              <h3 class="font-semibold text-amber-800 mb-3 flex items-center gap-2">
-                <i class="fas fa-key"></i>
-                <span>Hanya untuk Admin Toko</span>
-              </h3>
-              <ul class="text-sm text-amber-700 space-y-2">
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check-circle text-xs"></i>
-                  <span>Kelola produk dan harga</span>
-                </li>
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check-circle text-xs"></i>
-                  <span>Edit informasi toko</span>
-                </li>
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check-circle text-xs"></i>
-                  <span>Lihat riwayat transaksi</span>
-                </li>
-                <li class="flex items-center gap-2">
-                  <i class="fas fa-check-circle text-xs"></i>
-                  <span>Update QRIS pembayaran</span>
-                </li>
-              </ul>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Sandi Admin</label>
-              <input type="password" id="adminPassword" 
-                     class="w-full p-4 text-center border-2 border-slate-200 rounded-xl text-lg font-bold password-input focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-100 transition"
-                     placeholder="••••••"
-                     maxlength="6">
-              <p class="text-xs text-slate-500 mt-2 text-center">Masukkan 6 digit sandi admin</p>
-            </div>
-            
-            <button id="btnAdminLogin" 
-                    class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-4 rounded-xl font-bold shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
-              <i class="fas fa-unlock-alt"></i>
-              MASUK SEBAGAI ADMIN
-            </button>
-            
-            <button id="btnBackToCashier" 
-                    class="w-full border-2 border-slate-300 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-50 transition">
-              <i class="fas fa-arrow-left mr-2"></i>
-              Kembali ke Kasir
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Page: Admin Dashboard -->
-      <div id="page-admin-dashboard" class="hidden">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-8">
-            <div>
-              <h3 class="font-bold text-2xl text-slate-800 flex items-center gap-3">
-                <div class="w-12 h-12 admin-badge rounded-xl flex items-center justify-center">
-                  <i class="fas fa-crown text-xl text-white"></i>
+                <div class="flex justify-between text-orange-500">
+                    <span>Biaya Admin:</span>
+                    <span id="billFee" class="font-mono">+ Rp 0</span>
                 </div>
-                <span>Admin Dashboard</span>
-              </h3>
-              <p class="text-slate-500 text-sm mt-1">Kelola toko dan produk Anda</p>
+                <div class="flex justify-between text-lg font-bold text-indigo-700 border-t pt-2 mt-2">
+                    <span>Total Bayar:</span>
+                    <span id="billTotal">Rp 0</span>
+                </div>
             </div>
-            <button id="btnAdminLogout" 
-                    class="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
-              <i class="fas fa-sign-out-alt"></i>
-              Logout
-            </button>
-          </div>
-          
-          <!-- Store Info Card -->
-          <div class="bg-gradient-to-br from-slate-50 to-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
-            <div class="flex items-center justify-between mb-4">
-              <h4 class="font-semibold text-slate-700">Info Toko</h4>
-              <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium">
-                ID: <span id="adminStoreId">...</span>
-              </span>
+
+            <div class="text-center bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+                <p class="text-xs font-bold text-slate-400 mb-2 uppercase">Scan QRIS Ini</p>
+                <div id="qrContainer" class="min-h-[180px] flex items-center justify-center">
+                    <p class="text-[10px] text-slate-400">QRIS akan muncul disini</p>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2">Nominal otomatis muncul saat scan</p>
             </div>
+
             <div class="space-y-3">
-              <div>
-                <p class="text-sm text-slate-500">Nama Toko</p>
-                <p id="adminStoreName" class="font-semibold text-lg text-slate-800">...</p>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <p class="text-sm text-slate-500">Total Produk</p>
-                  <p id="adminProductCount" class="font-bold text-xl text-indigo-600">0</p>
+                    <label class="text-xs font-bold text-slate-500 ml-1">Nama Anda</label>
+                    <input type="text" id="custName" class="w-full p-3 border rounded-xl text-sm bg-slate-50 focus:bg-white transition outline-none focus:border-indigo-500" placeholder="Ketik nama...">
                 </div>
-                <div>
-                  <p class="text-sm text-slate-500">Nominal Default</p>
-                  <p id="adminStoreAmount" class="font-bold text-xl text-emerald-600">Rp 0</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Admin Actions -->
-          <div class="space-y-4">
-            <h4 class="font-semibold text-slate-700">Aksi Admin</h4>
-            
-            <button id="btnManageProducts" 
-                    class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-5 rounded-xl text-left hover:opacity-90 transition flex items-center justify-between group">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-boxes text-xl"></i>
-                </div>
-                <div>
-                  <p class="font-bold">Kelola Produk</p>
-                  <p class="text-sm opacity-90">Tambah, edit, atau hapus produk</p>
-                </div>
-              </div>
-              <i class="fas fa-chevron-right opacity-50 group-hover:translate-x-1 transition"></i>
-            </button>
-            
-            <button id="btnStoreSettings" 
-                    class="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-5 rounded-xl text-left hover:opacity-90 transition flex items-center justify-between group">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-store text-xl"></i>
-                </div>
-                <div>
-                  <p class="font-bold">Pengaturan Toko</p>
-                  <p class="text-sm opacity-90">Edit info toko dan QRIS</p>
-                </div>
-              </div>
-              <i class="fas fa-chevron-right opacity-50 group-hover:translate-x-1 transition"></i>
-            </button>
-            
-            <button id="btnViewTransactions" 
-                    class="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-white p-5 rounded-xl text-left hover:opacity-90 transition flex items-center justify-between group">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-history text-xl"></i>
-                </div>
-                <div>
-                  <p class="font-bold">Riwayat Transaksi</p>
-                  <p class="text-sm opacity-90">Lihat semua transaksi</p>
-                </div>
-              </div>
-              <i class="fas fa-chevron-right opacity-50 group-hover:translate-x-1 transition"></i>
-            </button>
-            
-            <button id="btnGenerateReport" 
-                    class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white p-5 rounded-xl text-left hover:opacity-90 transition flex items-center justify-between group">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                  <i class="fas fa-chart-bar text-xl"></i>
-                </div>
-                <div>
-                  <p class="font-bold">Laporan Penjualan</p>
-                  <p class="text-sm opacity-90">Analisis performa toko</p>
-                </div>
-              </div>
-              <i class="fas fa-chevron-right opacity-50 group-hover:translate-x-1 transition"></i>
-            </button>
-          </div>
-          
-          <!-- Quick Stats -->
-          <div class="mt-8 pt-6 border-t border-slate-100">
-            <h4 class="font-semibold text-slate-700 mb-4">Statistik Cepat</h4>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-slate-50 p-4 rounded-xl">
-                <p class="text-sm text-slate-500">Mode Saat Ini</p>
-                <p class="font-bold text-slate-800">Admin</p>
-              </div>
-              <div class="bg-slate-50 p-4 rounded-xl">
-                <p class="text-sm text-slate-500">Sandi Admin</p>
-                <p class="font-bold text-slate-800">***</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Page: Admin Products Management -->
-      <div id="page-admin-products" class="hidden">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <div>
-              <h3 class="font-bold text-xl text-slate-700 flex items-center gap-3">
-                <div class="w-10 h-10 admin-badge rounded-lg flex items-center justify-center">
-                  <i class="fas fa-boxes text-white"></i>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 ml-1">Upload Bukti Transfer</label>
+                    <div class="relative">
+                        <input type="file" id="proofFile" accept="image/*" class="hidden" onchange="window.previewProof(this)">
+                        <button onclick="document.getElementById('proofFile').click()" class="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 text-xs font-bold hover:bg-slate-50 hover:border-indigo-400 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-camera"></i> <span id="proofText">Pilih Foto Bukti</span>
+                        </button>
+                        <img id="proofPreview" class="hidden mt-2 w-full h-32 object-cover rounded-lg border">
+                    </div>
                 </div>
-                <span>Kelola Produk</span>
-              </h3>
-              <p class="text-slate-500 text-sm mt-1">Tambah, edit, atau hapus produk</p>
-            </div>
-            <button id="btnAddProduct" 
-                    class="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition flex items-center gap-2">
-              <i class="fas fa-plus"></i>
-              Tambah
-            </button>
-          </div>
-          
-          <!-- Add/Edit Product Form -->
-          <div id="productFormContainer" class="hidden mb-6">
-            <div class="bg-gradient-to-br from-slate-50 to-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <div class="flex justify-between items-center mb-4">
-                <h4 id="formTitle" class="font-semibold text-slate-700">Tambah Produk Baru</h4>
-                <button id="btnCancelForm" class="text-slate-400 hover:text-slate-700">
-                  <i class="fas fa-times"></i>
+
+                <button onclick="window.processCheckout()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-200 flex items-center justify-center gap-2 transform active:scale-95 transition">
+                    <i class="fab fa-whatsapp text-xl"></i> KIRIM KE WA ADMIN
                 </button>
-              </div>
-              
-              <div class="space-y-4">
-                <input type="hidden" id="editProductId">
-                
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Nama Produk</label>
-                  <input type="text" id="productName" 
-                         class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500"
-                         placeholder="Contoh: Kopi Latte">
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Harga (Rp)</label>
-                  <input type="number" id="productPrice" 
-                         class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500"
-                         placeholder="10000">
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-1">Deskripsi (opsional)</label>
-                  <textarea id="productDescription" rows="2"
-                            class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500"
-                            placeholder="Deskripsi produk"></textarea>
-                </div>
-                
-                <div class="flex gap-3">
-                  <button id="btnSaveProduct" 
-                          class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:opacity-90 transition">
-                    Simpan
-                  </button>
-                  <button id="btnDeleteProduct" 
-                          class="flex-1 bg-gradient-to-r from-red-500 to-pink-500 text-white py-3 rounded-lg font-medium hover:opacity-90 transition hidden">
-                    Hapus
-                  </button>
-                </div>
-              </div>
             </div>
-          </div>
-          
-          <!-- Products List -->
-          <div id="adminProductsList" class="space-y-3">
-            <!-- Products will be loaded here -->
-          </div>
-          
-          <div id="adminNoProducts" class="text-center py-16">
-            <div class="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-boxes text-3xl text-slate-400"></i>
+        </div>
+
+      </div>
+
+      <div id="page-admin-login" class="hidden flex flex-col justify-center h-full text-center py-20">
+        <div class="bg-white p-6 rounded-2xl shadow-sm mx-4">
+            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-user-shield text-2xl text-slate-600"></i>
             </div>
-            <p class="text-slate-500 mb-2">Belum ada produk</p>
-            <p class="text-sm text-slate-400 mb-6">Tambahkan produk pertama Anda</p>
-            <button id="btnAddFirstProduct" 
-                    class="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition">
-              <i class="fas fa-plus mr-2"></i>
-              Tambah Produk Pertama
-            </button>
-          </div>
+            <h2 class="text-xl font-bold mb-4">Login Admin</h2>
+            <input type="password" id="adminPin" class="w-full p-3 border rounded-xl text-center text-lg mb-4" placeholder="Masukkan PIN (110603)" maxlength="6">
+            <div class="flex gap-2">
+                <button onclick="window.closeAdmin()" class="flex-1 py-3 bg-slate-200 rounded-xl font-bold text-slate-600">Batal</button>
+                <button onclick="window.loginAdmin()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">Masuk</button>
+            </div>
         </div>
       </div>
 
-      <!-- Page: Admin Store Settings -->
-      <div id="page-admin-settings" class="hidden">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <div>
-              <h3 class="font-bold text-xl text-slate-700 flex items-center gap-3">
-                <div class="w-10 h-10 admin-badge rounded-lg flex items-center justify-center">
-                  <i class="fas fa-cog text-white"></i>
+      <div id="page-admin-dashboard" class="hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="font-bold text-xl">Pengaturan Toko</h2>
+            <button onclick="window.closeAdmin()" class="text-red-500 text-xs font-bold border border-red-200 px-3 py-1 rounded-full">Keluar</button>
+        </div>
+
+        <div class="space-y-6 pb-20">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-700 mb-3 border-b pb-2">Info & Fee</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400">Nama Toko</label>
+                        <input type="text" id="setShopName" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400">Biaya Admin / Fee (Rp)</label>
+                        <input type="number" id="setFee" class="w-full p-2 border rounded-lg text-sm" placeholder="Contoh: 1000">
+                        <p class="text-[10px] text-slate-400">*Ditambahkan otomatis ke total bayar</p>
+                    </div>
                 </div>
-                <span>Pengaturan Toko</span>
-              </h3>
-              <p class="text-slate-500 text-sm mt-1">Hanya admin yang dapat mengedit</p>
             </div>
-          </div>
-          
-          <div class="space-y-5">
-            <!-- Store ID -->
-            <div class="bg-slate-50 p-4 rounded-xl">
-              <label class="block text-xs font-bold text-slate-500 mb-1">ID TOKO</label>
-              <div class="flex items-center gap-2">
-                <input type="text" id="adminSetupId" readonly 
-                       class="flex-1 bg-transparent border-none text-lg font-bold text-slate-700 uppercase">
-                <button onclick="copyToClipboard('adminSetupId')" class="text-slate-400 hover:text-indigo-600 transition">
-                  <i class="far fa-copy"></i>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-700 mb-3 border-b pb-2">QRIS Database</h3>
+                
+                <div class="bg-blue-50 p-2 rounded border border-blue-100 mb-2 text-[10px] text-blue-600">
+                    <i class="fas fa-info-circle"></i> Wajib upload gambar QRIS agar pembeli bisa bayar.
+                </div>
+
+                <input type="file" id="qrisUpload" accept="image/*" class="hidden">
+                <button onclick="document.getElementById('qrisUpload').click()" class="w-full py-3 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold border border-indigo-100 mb-2 hover:bg-indigo-100 transition">
+                    <i class="fas fa-camera"></i> Upload Gambar QRIS
                 </button>
-              </div>
-              <p class="text-xs text-slate-400 mt-2">ID ini digunakan untuk mengakses toko Anda</p>
+                <textarea id="setQrisString" class="w-full p-2 text-[10px] bg-slate-100 rounded border font-mono" rows="2" readonly placeholder="String QRIS akan muncul disini..."></textarea>
             </div>
 
-            <!-- Store Name -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Nama Toko</label>
-              <input type="text" id="adminSetupName" 
-                     class="w-full p-4 border-2 border-slate-200 rounded-xl text-base focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
-                     placeholder="Contoh: Warung Kopi Bahagia">
-            </div>
-
-            <!-- WhatsApp Number -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
-                Nomor WhatsApp
-                <span class="text-xs text-slate-500">(untuk notifikasi)</span>
-              </label>
-              <div class="flex gap-2">
-                <div class="w-24">
-                  <select id="adminSetupWaPrefix" class="w-full p-4 border-2 border-slate-200 rounded-xl">
-                    <option value="62">+62</option>
-                    <option value="1">+1</option>
-                  </select>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-700 mb-3 border-b pb-2">Tambah Produk</h3>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="newProdName" class="flex-1 p-2 border rounded-lg text-sm" placeholder="Nama Produk">
+                    <input type="number" id="newProdPrice" class="w-24 p-2 border rounded-lg text-sm" placeholder="Harga">
                 </div>
-                <input type="tel" id="adminSetupWa" 
-                       class="flex-1 p-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none"
-                       placeholder="8123456789">
-              </div>
+                <button onclick="window.addProduct()" class="w-full bg-green-500 text-white py-2 rounded-lg font-bold text-sm mb-4 hover:bg-green-600 transition">Tambah</button>
+
+                <div id="adminProductList" class="space-y-2 max-h-60 overflow-y-auto"></div>
             </div>
 
-            <!-- Default Amount -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Nominal Default</label>
-              <input type="number" id="adminSetupAmount" 
-                     class="w-full p-4 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none"
-                     placeholder="Kosongkan untuk nominal bebas">
-            </div>
-
-            <!-- QRIS Upload -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">QRIS</label>
-              <div class="border-3 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-6 text-center relative hover:border-indigo-400 transition cursor-pointer">
-                <input type="file" id="adminQrisFile" accept="image/*,.pdf" 
-                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <i class="fas fa-qrcode text-xl text-indigo-600"></i>
-                </div>
-                <p class="font-medium text-slate-700 mb-1">Upload QRIS</p>
-                <p class="text-xs text-slate-500 mb-2">Format: JPG, PNG, atau PDF</p>
-                <p class="text-xs text-indigo-600" id="adminQrisFileName">Belum ada file dipilih</p>
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="pt-4 space-y-3">
-              <button id="btnAdminSaveStore" 
-                      class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold shadow-lg hover:opacity-90 transition flex items-center justify-center gap-2">
-                <i class="fas fa-cloud-upload-alt"></i>
-                SIMPAN PERUBAHAN
-              </button>
-            </div>
-          </div>
+            <button onclick="window.saveSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-xl sticky bottom-4 hover:bg-slate-800 transition">SIMPAN SEMUA</button>
         </div>
       </div>
 
-      <!-- Page: Admin Transactions -->
-      <div id="page-admin-transactions" class="hidden">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <div>
-              <h3 class="font-bold text-xl text-slate-700 flex items-center gap-3">
-                <div class="w-10 h-10 admin-badge rounded-lg flex items-center justify-center">
-                  <i class="fas fa-history text-white"></i>
-                </div>
-                <span>Riwayat Transaksi</span>
-              </h3>
-              <p class="text-slate-500 text-sm mt-1">Hanya admin yang dapat melihat</p>
-            </div>
-            <button id="btnRefreshAdminTransactions" class="text-slate-400 hover:text-indigo-600 transition">
-              <i class="fas fa-sync-alt"></i>
-            </button>
-          </div>
-          
-          <div id="adminTransactionsList" class="space-y-3">
-            <!-- Transactions will be loaded here -->
-          </div>
-          
-          <div id="adminEmptyTransactions" class="text-center py-16">
-            <div class="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-receipt text-3xl text-slate-400"></i>
-            </div>
-            <p class="text-slate-500 mb-2">Belum ada transaksi</p>
-            <p class="text-sm text-slate-400">Transaksi akan muncul di sini</p>
-          </div>
-        </div>
-      </div>
     </div>
-
-    <!-- Bottom Navigation -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 max-w-md mx-auto">
-      <div class="flex justify-around">
-        <button id="footerHome" class="flex flex-col items-center text-indigo-600">
-          <i class="fas fa-home text-lg mb-1"></i>
-          <span class="text-xs font-medium">Toko</span>
-        </button>
-        <button id="footerProducts" class="flex flex-col items-center text-slate-400">
-          <i class="fas fa-box text-lg mb-1"></i>
-          <span class="text-xs font-medium">Produk</span>
-        </button>
-        <button id="footerCashier" class="flex flex-col items-center text-slate-400">
-          <i class="fas fa-qrcode text-lg mb-1"></i>
-          <span class="text-xs font-medium">Kasir</span>
-        </button>
-        <button id="footerAdmin" class="flex flex-col items-center text-slate-400">
-          <i class="fas fa-user-shield text-lg mb-1"></i>
-          <span class="text-xs font-medium">Admin</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
   </div>
 
-  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- Firebase -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, get, child, update, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // Firebase Configuration
+    // --- CONFIG FIREBASE KAMU (SUDAH DIISI OTOMATIS) ---
     const firebaseConfig = {
       apiKey: "AIzaSyAUL2WkPlJLb8wHcSKQ_QA7GSZ5DGw94Ng",
       authDomain: "kasir-online-c22bd.firebaseapp.com",
@@ -738,1101 +197,314 @@
       measurementId: "G-QR6HPRX459"
     };
 
-    // Initialize App
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    // ID Toko & WA Owner
+    const STORE_ID = "toko-utama";
+    const OWNER_WA = "6285236363128"; // Sudah disesuaikan
 
-    // State Management
-    const state = {
-      currentStoreId: '',
-      currentStore: null,
-      products: [],
-      transactions: [],
-      recentStores: JSON.parse(localStorage.getItem('recentStores') || '[]'),
-      isAdmin: false,
-      adminPassword: '110603', // Sandi admin
-      qrCodeInstance: null
+    // Init Toastr
+    toastr.options = { "positionClass": "toast-top-center", "timeOut": "2000" };
+    
+    let db;
+    let storeData = { 
+        name: "Loading...", 
+        fee: 0, 
+        qris: "", 
+        products: [] 
     };
+    let currentTotal = 0;
+    let selectedItemName = "";
 
-    // DOM Elements
-    const elements = {
-      // Pages
-      pageHome: document.getElementById('page-home'),
-      pageCashier: document.getElementById('page-cashier'),
-      pageProducts: document.getElementById('page-products'),
-      pageAdminLogin: document.getElementById('page-admin-login'),
-      pageAdminDashboard: document.getElementById('page-admin-dashboard'),
-      pageAdminProducts: document.getElementById('page-admin-products'),
-      pageAdminSettings: document.getElementById('page-admin-settings'),
-      pageAdminTransactions: document.getElementById('page-admin-transactions'),
-      
-      // Navigation
-      navGuest: document.getElementById('navGuest'),
-      navAdmin: document.getElementById('navAdmin'),
-      navHome: document.getElementById('navHome'),
-      navProducts: document.getElementById('navProducts'),
-      navAdminAccess: document.getElementById('navAdminAccess'),
-      navAdminDashboard: document.getElementById('navAdminDashboard'),
-      navAdminProducts: document.getElementById('navAdminProducts'),
-      navAdminSettings: document.getElementById('navAdminSettings'),
-      
-      // Footer Navigation
-      footerHome: document.getElementById('footerHome'),
-      footerProducts: document.getElementById('footerProducts'),
-      footerCashier: document.getElementById('footerCashier'),
-      footerAdmin: document.getElementById('footerAdmin'),
-      
-      // Status
-      statusText: document.getElementById('statusText'),
-      loaderIcon: document.getElementById('loaderIcon'),
-      headerSubtitle: document.getElementById('headerSubtitle'),
-      adminIndicator: document.getElementById('adminIndicator'),
-      
-      // Home Page
-      storeIdInput: document.getElementById('storeIdInput'),
-      btnLogin: document.getElementById('btnLogin'),
-      recentStores: document.getElementById('recentStores'),
-      recentList: document.getElementById('recentList'),
-      
-      // Cashier Page
-      dispName: document.getElementById('dispName'),
-      dispId: document.getElementById('dispId'),
-      dispAmount: document.getElementById('dispAmount'),
-      amountNote: document.getElementById('amountNote'),
-      qrContainer: document.getElementById('qrContainer'),
-      custName: document.getElementById('custName'),
-      custPhone: document.getElementById('custPhone'),
-      custNote: document.getElementById('custNote'),
-      btnEditAmount: document.getElementById('btnEditAmount'),
-      btnSendWA: document.getElementById('btnSendWA'),
-      productSelection: document.getElementById('productSelection'),
-      productsGrid: document.getElementById('productsGrid'),
-      noProducts: document.getElementById('noProducts'),
-      productCount: document.getElementById('productCount'),
-      
-      // Products Page
-      productsList: document.getElementById('productsList'),
-      noProducts2: document.getElementById('noProducts2'),
-      productCount2: document.getElementById('productCount2'),
-      
-      // Admin Login Page
-      adminPassword: document.getElementById('adminPassword'),
-      btnAdminLogin: document.getElementById('btnAdminLogin'),
-      btnBackToCashier: document.getElementById('btnBackToCashier'),
-      
-      // Admin Dashboard Page
-      adminStoreId: document.getElementById('adminStoreId'),
-      adminStoreName: document.getElementById('adminStoreName'),
-      adminProductCount: document.getElementById('adminProductCount'),
-      adminStoreAmount: document.getElementById('adminStoreAmount'),
-      btnManageProducts: document.getElementById('btnManageProducts'),
-      btnStoreSettings: document.getElementById('btnStoreSettings'),
-      btnViewTransactions: document.getElementById('btnViewTransactions'),
-      btnGenerateReport: document.getElementById('btnGenerateReport'),
-      btnAdminLogout: document.getElementById('btnAdminLogout'),
-      
-      // Admin Products Page
-      productFormContainer: document.getElementById('productFormContainer'),
-      formTitle: document.getElementById('formTitle'),
-      editProductId: document.getElementById('editProductId'),
-      productName: document.getElementById('productName'),
-      productPrice: document.getElementById('productPrice'),
-      productDescription: document.getElementById('productDescription'),
-      btnSaveProduct: document.getElementById('btnSaveProduct'),
-      btnDeleteProduct: document.getElementById('btnDeleteProduct'),
-      btnCancelForm: document.getElementById('btnCancelForm'),
-      btnAddProduct: document.getElementById('btnAddProduct'),
-      btnAddFirstProduct: document.getElementById('btnAddFirstProduct'),
-      adminProductsList: document.getElementById('adminProductsList'),
-      adminNoProducts: document.getElementById('adminNoProducts'),
-      
-      // Admin Settings Page
-      adminSetupId: document.getElementById('adminSetupId'),
-      adminSetupName: document.getElementById('adminSetupName'),
-      adminSetupWaPrefix: document.getElementById('adminSetupWaPrefix'),
-      adminSetupWa: document.getElementById('adminSetupWa'),
-      adminSetupAmount: document.getElementById('adminSetupAmount'),
-      adminQrisFile: document.getElementById('adminQrisFile'),
-      adminQrisFileName: document.getElementById('adminQrisFileName'),
-      btnAdminSaveStore: document.getElementById('btnAdminSaveStore'),
-      
-      // Admin Transactions Page
-      adminTransactionsList: document.getElementById('adminTransactionsList'),
-      adminEmptyTransactions: document.getElementById('adminEmptyTransactions'),
-      btnRefreshAdminTransactions: document.getElementById('btnRefreshAdminTransactions'),
-    };
-
-    // Initialize App
-    document.addEventListener('DOMContentLoaded', () => {
-      initApp();
-      setupEventListeners();
-      loadRecentStores();
-      checkUrlStore();
-    });
-
-    function initApp() {
-      updateStatus('Siap digunakan', 'success');
-      elements.headerSubtitle.textContent = 'Solusi Pembayaran Digital';
-      
-      // Set default phone prefix
-      elements.adminSetupWaPrefix.value = '62';
-    }
-
-    function updateStatus(text, type = 'info') {
-      elements.statusText.textContent = text;
-      const icon = elements.loaderIcon;
-      
-      if (type === 'success') {
-        icon.className = 'w-2 h-2 rounded-full bg-green-500';
-      } else if (type === 'error') {
-        icon.className = 'w-2 h-2 rounded-full bg-red-500';
-      } else {
-        icon.className = 'loader';
-      }
-    }
-
-    function showToast(message, type = 'info') {
-      const toast = document.createElement('div');
-      toast.className = `px-4 py-3 rounded-lg shadow-lg text-white font-medium animate-slide-in ${type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'}`;
-      toast.textContent = message;
-      
-      elements.toastContainer.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.remove();
-      }, 3000);
-    }
-
-    function showPage(pageName) {
-      // Hide all pages
-      document.querySelectorAll('[id^="page-"]').forEach(page => {
-        page.classList.add('hidden');
-      });
-      
-      // Show selected page
-      const pageId = 'page-' + pageName.replace(/([A-Z])/g, '-$1').toLowerCase();
-      document.getElementById(pageId)?.classList.remove('hidden');
-      
-      // Update navigation
-      updateNavigation(pageName);
-    }
-
-    function updateNavigation(activePage) {
-      // Reset footer navigation
-      [elements.footerHome, elements.footerProducts, elements.footerCashier, elements.footerAdmin].forEach(footer => {
-        footer.classList.remove('text-indigo-600');
-        footer.classList.add('text-slate-400');
-      });
-      
-      // Set active footer
-      switch(activePage) {
-        case 'home':
-          elements.footerHome.classList.add('text-indigo-600');
-          elements.footerHome.classList.remove('text-slate-400');
-          break;
-        case 'products':
-        case 'page-products':
-          elements.footerProducts.classList.add('text-indigo-600');
-          elements.footerProducts.classList.remove('text-slate-400');
-          break;
-        case 'cashier':
-          elements.footerCashier.classList.add('text-indigo-600');
-          elements.footerCashier.classList.remove('text-slate-400');
-          break;
-        case 'adminLogin':
-        case 'adminDashboard':
-        case 'adminProducts':
-        case 'adminSettings':
-        case 'adminTransactions':
-          elements.footerAdmin.classList.add('text-indigo-600');
-          elements.footerAdmin.classList.remove('text-slate-400');
-          break;
-      }
-      
-      // Update header navigation
-      if (state.isAdmin && state.currentStoreId) {
-        elements.navGuest.classList.add('hidden');
-        elements.navAdmin.classList.remove('hidden');
-        elements.headerSubtitle.textContent = 'Mode Admin';
-      } else {
-        elements.navGuest.classList.remove('hidden');
-        elements.navAdmin.classList.add('hidden');
-        elements.headerSubtitle.textContent = 'Solusi Pembayaran Digital';
-      }
-    }
-
-    function setupEventListeners() {
-      // Navigation
-      elements.navHome.addEventListener('click', () => {
-        if (state.isAdmin) {
-          showPage('adminDashboard');
-        } else {
-          showPage('cashier');
-        }
-      });
-      elements.navProducts.addEventListener('click', () => {
-        if (state.isAdmin) {
-          loadProducts();
-          showPage('adminProducts');
-        } else {
-          loadProducts();
-          showPage('products');
-        }
-      });
-      elements.navAdminAccess.addEventListener('click', () => {
-        if (state.isAdmin) {
-          showPage('adminDashboard');
-        } else {
-          showPage('adminLogin');
-        }
-      });
-      
-      elements.navAdminDashboard.addEventListener('click', () => showPage('adminDashboard'));
-      elements.navAdminProducts.addEventListener('click', () => {
-        loadProducts();
-        showPage('adminProducts');
-      });
-      elements.navAdminSettings.addEventListener('click', () => {
-        loadAdminStoreData();
-        showPage('adminSettings');
-      });
-      
-      // Footer Navigation
-      elements.footerHome.addEventListener('click', () => {
-        if (state.currentStoreId) {
-          if (state.isAdmin) {
-            showPage('adminDashboard');
-          } else {
-            showPage('cashier');
-          }
-        } else {
-          showPage('home');
-        }
-      });
-      elements.footerProducts.addEventListener('click', () => {
-        if (state.currentStoreId) {
-          loadProducts();
-          if (state.isAdmin) {
-            showPage('adminProducts');
-          } else {
-            showPage('products');
-          }
-        }
-      });
-      elements.footerCashier.addEventListener('click', () => {
-        if (state.currentStoreId) {
-          showPage('cashier');
-        }
-      });
-      elements.footerAdmin.addEventListener('click', () => {
-        if (state.currentStoreId) {
-          if (state.isAdmin) {
-            showPage('adminDashboard');
-          } else {
-            showPage('adminLogin');
-          }
-        }
-      });
-      
-      // Home Page
-      elements.btnLogin.addEventListener('click', checkStore);
-      elements.storeIdInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkStore();
-      });
-      
-      // Cashier Page
-      elements.btnEditAmount.addEventListener('click', toggleCustomAmount);
-      elements.btnSendWA.addEventListener('click', sendWhatsApp);
-      
-      // Admin Login Page
-      elements.btnAdminLogin.addEventListener('click', adminLogin);
-      elements.btnBackToCashier.addEventListener('click', () => showPage('cashier'));
-      elements.adminPassword.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') adminLogin();
-      });
-      
-      // Admin Dashboard Page
-      elements.btnManageProducts.addEventListener('click', () => {
-        loadProducts();
-        showPage('adminProducts');
-      });
-      elements.btnStoreSettings.addEventListener('click', () => {
-        loadAdminStoreData();
-        showPage('adminSettings');
-      });
-      elements.btnViewTransactions.addEventListener('click', () => {
-        loadAdminTransactions();
-        showPage('adminTransactions');
-      });
-      elements.btnGenerateReport.addEventListener('click', generateReport);
-      elements.btnAdminLogout.addEventListener('click', adminLogout);
-      
-      // Admin Products Page
-      elements.btnAddProduct.addEventListener('click', showProductForm);
-      elements.btnAddFirstProduct.addEventListener('click', showProductForm);
-      elements.btnSaveProduct.addEventListener('click', saveProduct);
-      elements.btnDeleteProduct.addEventListener('click', deleteProduct);
-      elements.btnCancelForm.addEventListener('click', hideProductForm);
-      
-      // Admin Settings Page
-      elements.btnAdminSaveStore.addEventListener('click', adminSaveStore);
-      elements.adminQrisFile.addEventListener('change', handleAdminQRISUpload);
-      
-      // Admin Transactions Page
-      elements.btnRefreshAdminTransactions.addEventListener('click', loadAdminTransactions);
-    }
-
-    function checkStore() {
-      let storeId = elements.storeIdInput.value.trim().toLowerCase();
-      
-      if (!storeId) {
-        showToast('Masukkan kode toko terlebih dahulu', 'error');
-        return;
-      }
-      
-      // Validate store ID
-      storeId = storeId.replace(/[^a-z0-9-_]/g, '-');
-      if (storeId.length < 3 || storeId.length > 20) {
-        showToast('Kode toko harus 3-20 karakter', 'error');
-        return;
-      }
-      
-      elements.btnLogin.disabled = true;
-      elements.btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memeriksa...';
-      
-      checkStoreExists(storeId).then(exists => {
-        if (exists) {
-          // Load existing store
-          loadStore(storeId);
-        } else {
-          // Create new store (only admin can create)
-          showToast('Toko tidak ditemukan. Hanya admin yang dapat membuat toko baru.', 'error');
-        }
-      }).catch(error => {
-        showToast('Gagal memeriksa toko: ' + error.message, 'error');
-      }).finally(() => {
-        elements.btnLogin.disabled = false;
-        elements.btnLogin.innerHTML = '<i class="fas fa-sign-in-alt"></i> MASUK KE TOKO';
-      });
-    }
-
-    async function checkStoreExists(storeId) {
-      try {
-        const snapshot = await get(child(ref(db), `stores/${storeId}`));
-        return snapshot.exists();
-      } catch (error) {
-        throw error;
-      }
-    }
-
-    async function loadStore(storeId) {
-      try {
-        updateStatus('Memuat toko...', 'info');
+    // Init App
+    try {
+        const app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
         
-        const snapshot = await get(child(ref(db), `stores/${storeId}`));
-        if (!snapshot.exists()) {
-          showToast('Toko tidak ditemukan', 'error');
-          return;
+        // Cek koneksi & Load Data
+        setTimeout(() => initApp(), 500);
+    } catch(e) {
+        alert("Firebase Error. Cek console.");
+    }
+
+    async function initApp() {
+        document.getElementById('loaderIcon').className = "w-2 h-2 rounded-full bg-green-400";
+        
+        try {
+            const snapshot = await get(child(ref(db), `stores/${STORE_ID}`));
+            if (snapshot.exists()) {
+                storeData = snapshot.val();
+                if(!storeData.products) storeData.products = [];
+                if(!storeData.fee) storeData.fee = 0;
+            } else {
+                // Setup default jika kosong
+                storeData = { name: "Toko Saya", fee: 0, qris: "", products: [] };
+            }
+            renderShop();
+        } catch(e) {
+            toastr.error("Gagal memuat data. Cek internet.");
         }
-        
-        state.currentStoreId = storeId;
-        state.currentStore = snapshot.val();
-        
-        // Reset admin state for guest
-        state.isAdmin = false;
-        elements.adminIndicator.classList.add('hidden');
-        
-        // Add to recent stores
-        addToRecentStores(storeId, state.currentStore.name);
-        
-        // Update UI
-        updateCashierUI();
-        loadProducts();
-        generateQRCode();
-        
-        // Show cashier page
-        showPage('cashier');
-        updateStatus('Toko dimuat', 'success');
-        
-        // Update URL
-        updateUrlWithStore(storeId);
-        
-      } catch (error) {
-        showToast('Gagal memuat toko: ' + error.message, 'error');
-        updateStatus('Error', 'error');
-      }
     }
 
-    function updateCashierUI() {
-      if (!state.currentStore) return;
-      
-      elements.dispName.textContent = state.currentStore.name;
-      elements.dispId.textContent = state.currentStoreId;
-      
-      const amount = state.currentStore.amount || 0;
-      if (amount > 0) {
-        elements.dispAmount.textContent = formatCurrency(amount);
-        elements.amountNote.textContent = 'Nominal tetap';
-      } else {
-        elements.dispAmount.textContent = 'Input Nominal';
-        elements.amountNote.textContent = 'Pilih produk untuk menentukan nominal';
-      }
-    }
+    // --- RENDER SHOP (PENGUNJUNG) ---
+    function renderShop() {
+        document.getElementById('shopTitle').innerText = storeData.name || "Toko Online";
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = "";
 
-    function loadProducts() {
-      if (!state.currentStoreId) return;
-      
-      get(child(ref(db), `stores/${state.currentStoreId}/products`)).then((snapshot) => {
-        if (snapshot.exists()) {
-          state.products = [];
-          snapshot.forEach(childSnapshot => {
-            state.products.push({
-              id: childSnapshot.key,
-              ...childSnapshot.val()
+        if(storeData.products && storeData.products.length > 0) {
+            storeData.products.forEach((p, index) => {
+                grid.innerHTML += `
+                <div onclick="window.selectItem(${index})" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 transition active:scale-95">
+                    <div class="flex justify-between items-start">
+                        <div class="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mb-2">
+                            <i class="fas fa-tag text-indigo-500"></i>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-300 text-xs"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-700 text-sm truncate mb-1">${p.name}</h4>
+                    <p class="text-indigo-600 font-bold">Rp ${parseInt(p.price).toLocaleString()}</p>
+                </div>`;
             });
-          });
-          renderProducts();
         } else {
-          state.products = [];
-          renderProducts();
+            grid.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-10 bg-white rounded-xl border border-dashed border-slate-200">
+                <i class="fas fa-box-open text-2xl mb-2"></i><br>Belum ada produk.<br>Login Admin (Gembok di atas) untuk tambah.
+            </div>`;
         }
-      }).catch(error => {
-        console.error('Failed to load products:', error);
-        state.products = [];
-        renderProducts();
-      });
     }
 
-    function renderProducts() {
-      const productCount = state.products.length;
-      
-      // Update product count
-      elements.productCount.textContent = `${productCount} produk`;
-      elements.productCount2.textContent = `${productCount} produk`;
-      
-      // Render in cashier page (grid)
-      if (productCount > 0) {
-        elements.productsGrid.innerHTML = state.products.map(product => `
-          <div class="product-card bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-indigo-300 transition"
-               onclick="selectProduct('${product.id}', ${product.price}, '${product.name.replace(/'/g, "\\'")}')">
-            <div class="flex justify-between items-start mb-2">
-              <h4 class="font-medium text-slate-800 truncate">${product.name}</h4>
-              <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-bold">
-                ${formatCurrency(product.price)}
-              </span>
-            </div>
-            ${product.description ? `<p class="text-sm text-slate-600 truncate">${product.description}</p>` : ''}
-          </div>
-        `).join('');
-        elements.noProducts.classList.add('hidden');
-      } else {
-        elements.productsGrid.innerHTML = '';
-        elements.noProducts.classList.remove('hidden');
-      }
-      
-      // Render in products page (list)
-      if (productCount > 0) {
-        elements.productsList.innerHTML = state.products.map(product => `
-          <div class="product-card bg-white border border-slate-200 rounded-xl p-4"
-               onclick="selectProduct('${product.id}', ${product.price}, '${product.name.replace(/'/g, "\\'")}')">
-            <div class="flex items-center gap-4">
-              <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <i class="fas fa-box text-indigo-600"></i>
-              </div>
-              <div class="flex-1 min-w-0">
-                <h4 class="font-medium text-slate-800 truncate">${product.name}</h4>
-                ${product.description ? `<p class="text-sm text-slate-600 truncate">${product.description}</p>` : ''}
-              </div>
-              <div class="text-right">
-                <p class="font-bold text-slate-800">${formatCurrency(product.price)}</p>
-                <p class="text-xs text-slate-500">Pilih</p>
-              </div>
-            </div>
-          </div>
-        `).join('');
-        elements.noProducts2.classList.add('hidden');
-      } else {
-        elements.productsList.innerHTML = '';
-        elements.noProducts2.classList.remove('hidden');
-      }
-      
-      // Render in admin products page
-      if (state.isAdmin) {
+    // --- TRANSAKSI ---
+    window.selectItem = (index) => {
+        const item = storeData.products[index];
+        selectedItemName = item.name;
+        
+        const price = parseInt(item.price);
+        const fee = parseInt(storeData.fee || 0);
+        currentTotal = price + fee;
+
+        document.getElementById('billItemName').innerText = item.name;
+        document.getElementById('billItemPrice').innerText = "Rp " + price.toLocaleString();
+        document.getElementById('billFee').innerText = "+ Rp " + fee.toLocaleString();
+        document.getElementById('billTotal').innerText = "Rp " + currentTotal.toLocaleString();
+
+        document.getElementById('checkoutArea').classList.remove('hidden');
+        document.getElementById('productGrid').classList.add('hidden');
+        
+        generateQR(currentTotal);
+        document.querySelector('.overflow-y-auto').scrollTo(0,0);
+    };
+
+    window.resetSelection = () => {
+        document.getElementById('checkoutArea').classList.add('hidden');
+        document.getElementById('productGrid').classList.remove('hidden');
+        document.getElementById('custName').value = "";
+        document.getElementById('proofPreview').classList.add('hidden');
+        document.getElementById('proofFile').value = "";
+        document.getElementById('proofText').innerText = "Pilih Foto Bukti";
+    };
+
+    window.previewProof = (input) => {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('proofPreview');
+                img.src = e.target.result;
+                img.classList.remove('hidden');
+                document.getElementById('proofText').innerText = "Ganti Foto";
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    window.processCheckout = () => {
+        const name = document.getElementById('custName').value;
+        const file = document.getElementById('proofFile').files[0];
+
+        if(!name) return toastr.warning("Isi Nama Anda!");
+        if(!file) return toastr.warning("Wajib upload bukti transfer!");
+
+        const msg = `*ORDER BARU DARI WEB*\n────────────────\n🛍️ Produk: ${selectedItemName}\n👤 Pembeli: ${name}\n💰 Total Transfer: *Rp ${currentTotal.toLocaleString()}*\n────────────────\n*Bukti Transfer:* (User akan melampirkan gambar)`;
+
+        const url = `https://wa.me/${OWNER_WA}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+
+        alert("WhatsApp akan terbuka.\n\nJANGAN LUPA: Paste/Lampirkan foto bukti transfer Anda di chat tersebut.");
+        window.resetSelection();
+    };
+
+    // --- ADMIN ---
+    window.openAdmin = () => {
+        document.getElementById('page-shop').classList.add('hidden');
+        document.getElementById('page-admin-login').classList.remove('hidden');
+    };
+
+    window.closeAdmin = () => {
+        document.getElementById('page-admin-login').classList.add('hidden');
+        document.getElementById('page-admin-dashboard').classList.add('hidden');
+        document.getElementById('page-shop').classList.remove('hidden');
+    };
+
+    window.loginAdmin = () => {
+        const pin = document.getElementById('adminPin').value;
+        if(pin === "110603") {
+            document.getElementById('page-admin-login').classList.add('hidden');
+            document.getElementById('page-admin-dashboard').classList.remove('hidden');
+            loadAdminData();
+            document.getElementById('adminPin').value = "";
+            toastr.success("Login Berhasil");
+        } else {
+            toastr.error("PIN Salah!");
+        }
+    };
+
+    function loadAdminData() {
+        document.getElementById('setShopName').value = storeData.name || "";
+        document.getElementById('setFee').value = storeData.fee || 0;
+        document.getElementById('setQrisString').value = storeData.qris || "";
         renderAdminProducts();
-      }
     }
 
     function renderAdminProducts() {
-      if (state.products.length > 0) {
-        elements.adminProductsList.innerHTML = state.products.map(product => `
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex-1 min-w-0">
-                <h4 class="font-semibold text-slate-800 truncate">${product.name}</h4>
-                ${product.description ? `<p class="text-sm text-slate-600 truncate mt-1">${product.description}</p>` : ''}
-              </div>
-              <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold ml-4">
-                ${formatCurrency(product.price)}
-              </span>
-            </div>
-            <div class="flex gap-2">
-              <button onclick="editProduct('${product.id}')" 
-                      class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-2 rounded-lg font-medium hover:opacity-90 transition">
-                <i class="fas fa-edit mr-2"></i>Edit
-              </button>
-              <button onclick="deleteProductConfirm('${product.id}', '${product.name.replace(/'/g, "\\'")}')" 
-                      class="flex-1 bg-gradient-to-r from-red-500 to-pink-500 text-white py-2 rounded-lg font-medium hover:opacity-90 transition">
-                <i class="fas fa-trash mr-2"></i>Hapus
-              </button>
-            </div>
-          </div>
-        `).join('');
-        elements.adminNoProducts.classList.add('hidden');
-        elements.adminProductsList.classList.remove('hidden');
-      } else {
-        elements.adminProductsList.innerHTML = '';
-        elements.adminNoProducts.classList.remove('hidden');
-        elements.adminProductsList.classList.add('hidden');
-      }
-      
-      // Update dashboard count
-      elements.adminProductCount.textContent = state.products.length;
+        const list = document.getElementById('adminProductList');
+        list.innerHTML = "";
+        storeData.products.forEach((p, i) => {
+            list.innerHTML += `
+            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg text-sm border">
+                <span class="font-medium">${p.name} - Rp ${parseInt(p.price).toLocaleString()}</span>
+                <button onclick="window.deleteProd(${i})" class="text-red-500 font-bold bg-white px-2 py-1 rounded shadow-sm hover:bg-red-50">Hapus</button>
+            </div>`;
+        });
     }
 
-    function selectProduct(productId, price, name) {
-      elements.dispAmount.textContent = formatCurrency(price);
-      elements.amountNote.textContent = `Produk: ${name}`;
-      
-      // Add to note
-      const currentNote = elements.custNote.value;
-      if (currentNote) {
-        elements.custNote.value = `${currentNote}, ${name}`;
-      } else {
-        elements.custNote.value = name;
-      }
-      
-      // Scroll to form
-      elements.custName.focus();
-      showToast(`Produk "${name}" dipilih`, 'success');
-    }
-
-    function adminLogin() {
-      const password = elements.adminPassword.value.trim();
-      
-      if (password !== state.adminPassword) {
-        showToast('Sandi admin salah!', 'error');
-        elements.adminPassword.value = '';
-        elements.adminPassword.focus();
-        return;
-      }
-      
-      // Login successful
-      state.isAdmin = true;
-      elements.adminIndicator.classList.remove('hidden');
-      
-      showToast('Login admin berhasil!', 'success');
-      showPage('adminDashboard');
-      updateAdminDashboard();
-      
-      // Clear password field
-      elements.adminPassword.value = '';
-    }
-
-    function updateAdminDashboard() {
-      if (!state.currentStore) return;
-      
-      elements.adminStoreId.textContent = state.currentStoreId;
-      elements.adminStoreName.textContent = state.currentStore.name;
-      elements.adminProductCount.textContent = state.products.length;
-      elements.adminStoreAmount.textContent = state.currentStore.amount > 0 ? 
-        formatCurrency(state.currentStore.amount) : 'Bebas';
-    }
-
-    function adminLogout() {
-      if (confirm('Keluar dari mode admin?')) {
-        state.isAdmin = false;
-        elements.adminIndicator.classList.add('hidden');
-        showPage('cashier');
-        showToast('Logout admin berhasil', 'info');
-      }
-    }
-
-    function showProductForm(productId = null) {
-      elements.productFormContainer.classList.remove('hidden');
-      
-      if (productId) {
-        const product = state.products.find(p => p.id === productId);
-        if (product) {
-          elements.formTitle.textContent = 'Edit Produk';
-          elements.editProductId.value = productId;
-          elements.productName.value = product.name;
-          elements.productPrice.value = product.price;
-          elements.productDescription.value = product.description || '';
-          elements.btnDeleteProduct.classList.remove('hidden');
-        }
-      } else {
-        elements.formTitle.textContent = 'Tambah Produk Baru';
-        elements.editProductId.value = '';
-        elements.productName.value = '';
-        elements.productPrice.value = '';
-        elements.productDescription.value = '';
-        elements.btnDeleteProduct.classList.add('hidden');
-      }
-      
-      elements.productName.focus();
-    }
-
-    function hideProductForm() {
-      elements.productFormContainer.classList.add('hidden');
-    }
-
-    async function saveProduct() {
-      const name = elements.productName.value.trim();
-      const price = parseInt(elements.productPrice.value);
-      const description = elements.productDescription.value.trim();
-      const productId = elements.editProductId.value;
-      
-      if (!name || !price) {
-        showToast('Nama dan harga wajib diisi', 'error');
-        return;
-      }
-      
-      if (price < 1) {
-        showToast('Harga harus lebih dari 0', 'error');
-        return;
-      }
-      
-      const productData = {
-        name,
-        price,
-        description,
-        updatedAt: Date.now()
-      };
-      
-      try {
-        if (productId) {
-          // Update existing product
-          await update(ref(db, `stores/${state.currentStoreId}/products/${productId}`), productData);
-          showToast('Produk berhasil diperbarui', 'success');
-        } else {
-          // Add new product
-          const newProductRef = push(ref(db, `stores/${state.currentStoreId}/products`));
-          productData.createdAt = Date.now();
-          await set(newProductRef, productData);
-          showToast('Produk berhasil ditambahkan', 'success');
-        }
+    // --- UPLOAD QRIS (ADMIN) ---
+    document.getElementById('qrisUpload').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
         
-        // Refresh products
-        loadProducts();
-        hideProductForm();
-        
-      } catch (error) {
-        showToast('Gagal menyimpan produk: ' + error.message, 'error');
-      }
-    }
-
-    async function deleteProductConfirm(productId, productName) {
-      if (confirm(`Hapus produk "${productName}"?`)) {
-        try {
-          await remove(ref(db, `stores/${state.currentStoreId}/products/${productId}`));
-          showToast('Produk berhasil dihapus', 'success');
-          loadProducts();
-          hideProductForm();
-        } catch (error) {
-          showToast('Gagal menghapus produk: ' + error.message, 'error');
-        }
-      }
-    }
-
-    function deleteProduct() {
-      const productId = elements.editProductId.value;
-      const productName = elements.productName.value.trim();
-      deleteProductConfirm(productId, productName);
-    }
-
-    function loadAdminStoreData() {
-      if (!state.currentStore) return;
-      
-      elements.adminSetupId.value = state.currentStoreId;
-      elements.adminSetupName.value = state.currentStore.name || '';
-      
-      // Handle phone number
-      const phone = state.currentStore.wa || '';
-      if (phone.startsWith('62')) {
-        elements.adminSetupWaPrefix.value = '62';
-        elements.adminSetupWa.value = phone.substring(2);
-      } else if (phone.startsWith('1')) {
-        elements.adminSetupWaPrefix.value = '1';
-        elements.adminSetupWa.value = phone.substring(1);
-      } else {
-        elements.adminSetupWa.value = phone;
-      }
-      
-      elements.adminSetupAmount.value = state.currentStore.amount || '';
-    }
-
-    function handleAdminQRISUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      elements.adminQrisFileName.textContent = file.name;
-      
-      // Preview and convert to base64
-      if (file.type.startsWith('image/')) {
+        toastr.info("Memproses QRIS...");
         const reader = new FileReader();
-        reader.onload = function(e) {
-          // Store base64 image
-          if (state.currentStore) {
-            state.currentStore.qris = e.target.result;
-          }
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.createElement("canvas");
+                cvs.width = img.width; cvs.height = img.height;
+                const ctx = cvs.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0,0,cvs.width,cvs.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                if(code) {
+                    document.getElementById('setQrisString').value = code.data;
+                    toastr.success("QRIS Berhasil Dibaca!");
+                } else {
+                    toastr.error("QRIS tidak terbaca. Pastikan gambar jelas/crop.");
+                }
+            };
+            img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
-      }
-    }
+    });
 
-    async function adminSaveStore() {
-      const storeData = {
-        name: elements.adminSetupName.value.trim(),
-        wa: elements.adminSetupWaPrefix.value + elements.adminSetupWa.value.replace(/\D/g, ''),
-        amount: parseInt(elements.adminSetupAmount.value) || 0,
-        updatedAt: Date.now()
-      };
-      
-      if (!storeData.name) {
-        showToast('Nama toko wajib diisi', 'error');
-        return;
-      }
-      
-      if (!storeData.wa || storeData.wa.length < 10) {
-        showToast('Nomor WhatsApp tidak valid', 'error');
-        return;
-      }
-      
-      // Keep existing data
-      if (state.currentStore) {
-        if (state.currentStore.qris) storeData.qris = state.currentStore.qris;
-        if (state.currentStore.createdAt) storeData.createdAt = state.currentStore.createdAt;
-      } else {
-        storeData.createdAt = Date.now();
-      }
-      
-      elements.btnAdminSaveStore.disabled = true;
-      elements.btnAdminSaveStore.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
-      
-      try {
-        await set(ref(db, `stores/${state.currentStoreId}`), storeData);
+    window.saveSettings = async () => {
+        storeData.name = document.getElementById('setShopName').value;
+        storeData.fee = parseInt(document.getElementById('setFee').value) || 0;
+        storeData.qris = document.getElementById('setQrisString').value;
         
-        // Update local state
-        state.currentStore = storeData;
-        
-        // Update UI
-        updateCashierUI();
-        updateAdminDashboard();
-        generateQRCode();
-        
-        showToast('Toko berhasil disimpan', 'success');
-        showPage('adminDashboard');
-        
-      } catch (error) {
-        showToast('Gagal menyimpan: ' + error.message, 'error');
-      } finally {
-        elements.btnAdminSaveStore.disabled = false;
-        elements.btnAdminSaveStore.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> SIMPAN PERUBAHAN';
-      }
-    }
+        const btn = document.querySelector('button[onclick="window.saveSettings()"]');
+        btn.innerText = "Menyimpan...";
+        btn.disabled = true;
 
-    async function loadAdminTransactions() {
-      try {
-        const snapshot = await get(child(ref(db), `transactions/${state.currentStoreId}`));
-        
-        if (!snapshot.exists()) {
-          elements.adminEmptyTransactions.classList.remove('hidden');
-          elements.adminTransactionsList.innerHTML = '';
-          return;
+        try {
+            await set(ref(db, `stores/${STORE_ID}`), storeData);
+            toastr.success("Berhasil Disimpan!");
+            window.closeAdmin();
+            renderShop();
+        } catch(e) {
+            toastr.error("Gagal simpan.");
         }
-        
-        const transactions = [];
-        snapshot.forEach(childSnapshot => {
-          transactions.push({
-            id: childSnapshot.key,
-            ...childSnapshot.val()
-          });
-        });
-        
-        // Sort by timestamp
-        transactions.sort((a, b) => b.timestamp - a.timestamp);
-        
-        // Render transactions
-        renderAdminTransactions(transactions);
-        
-        // Hide empty state
-        elements.adminEmptyTransactions.classList.add('hidden');
-        
-      } catch (error) {
-        console.error('Failed to load transactions:', error);
-        showToast('Gagal memuat riwayat', 'error');
-      }
-    }
+        btn.innerText = "SIMPAN SEMUA";
+        btn.disabled = false;
+    };
 
-    function renderAdminTransactions(transactions) {
-      if (transactions.length === 0) {
-        elements.adminEmptyTransactions.classList.remove('hidden');
-        return;
-      }
-      
-      elements.adminTransactionsList.innerHTML = transactions.map(transaction => `
-        <div class="bg-white border border-slate-200 rounded-xl p-4">
-          <div class="flex justify-between items-start mb-2">
-            <div class="flex-1">
-              <h4 class="font-semibold text-slate-800">${transaction.customerName}</h4>
-              <p class="text-sm text-slate-500">${formatDate(transaction.timestamp)}</p>
-            </div>
-            <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-bold ml-4">
-              ${transaction.amount}
-            </span>
-          </div>
-          ${transaction.note ? `<p class="text-slate-600 text-sm mb-2">${transaction.note}</p>` : ''}
-          ${transaction.customerPhone ? `<p class="text-slate-500 text-sm"><i class="fas fa-phone mr-2"></i>${transaction.customerPhone}</p>` : ''}
-          <div class="mt-3 pt-3 border-t border-slate-100">
-            <p class="text-xs text-slate-500">ID Transaksi: ${transaction.id}</p>
-          </div>
-        </div>
-      `).join('');
-    }
+    window.addProduct = () => {
+        const name = document.getElementById('newProdName').value;
+        const price = document.getElementById('newProdPrice').value;
+        if(!name || !price) return toastr.warning("Lengkapi data produk");
 
-    function generateReport() {
-      if (state.products.length === 0) {
-        showToast('Belum ada produk untuk dianalisis', 'info');
-        return;
-      }
-      
-      // Simple report
-      const totalProducts = state.products.length;
-      const totalValue = state.products.reduce((sum, product) => sum + product.price, 0);
-      const avgPrice = totalValue / totalProducts;
-      
-      const report = `LAPORAN TOKO
---------------------
-Nama Toko: ${state.currentStore.name}
-Total Produk: ${totalProducts}
-Total Nilai Stok: ${formatCurrency(totalValue)}
-Rata-rata Harga: ${formatCurrency(avgPrice)}
---------------------
-${new Date().toLocaleDateString('id-ID')}`;
-      
-      alert(report);
-    }
+        storeData.products.push({name, price: parseInt(price)});
+        renderAdminProducts();
+        document.getElementById('newProdName').value = "";
+        document.getElementById('newProdPrice').value = "";
+    };
 
-    function sendWhatsApp() {
-      if (!state.currentStore) return;
-      
-      const customerName = elements.custName.value.trim();
-      const customerPhone = elements.custPhone.value.trim();
-      const note = elements.custNote.value.trim();
-      
-      if (!customerName) {
-        showToast('Nama pelanggan wajib diisi', 'error');
-        return;
-      }
-      
-      // Get current amount
-      let amountText = elements.dispAmount.textContent;
-      if (amountText === 'Input Nominal') {
-        amountText = 'Sesuai dengan aplikasi';
-      }
-      
-      // Create message
-      const message = `*INVOICE PEMBAYARAN QRIS*
-      
-📋 *Detail Transaksi:*
-🛒 Toko: ${state.currentStore.name}
-👤 Pelanggan: ${customerName}
-📱 Telepon: ${customerPhone || '-'}
-💰 Nominal: *${amountText}*
-📝 Catatan: ${note || '-'}
-⏰ Waktu: ${new Date().toLocaleString('id-ID')}
-
-_Scan QR Code di atas untuk melakukan pembayaran_
-
-Terima kasih telah berbelanja!`;
-      
-      // Encode for WhatsApp
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${state.currentStore.wa}?text=${encodedMessage}`;
-      
-      // Open WhatsApp
-      window.open(whatsappUrl, '_blank');
-      
-      // Save transaction
-      saveTransaction({
-        customerName,
-        customerPhone,
-        note,
-        amount: amountText,
-        timestamp: Date.now()
-      });
-      
-      // Reset form
-      elements.custName.value = '';
-      elements.custPhone.value = '';
-      elements.custNote.value = '';
-      elements.dispAmount.textContent = 'Input Nominal';
-      elements.amountNote.textContent = 'Pilih produk untuk menentukan nominal';
-      
-      showToast('Instruksi dikirim ke WhatsApp', 'success');
-    }
-
-    async function saveTransaction(transactionData) {
-      try {
-        const transactionRef = push(ref(db, `transactions/${state.currentStoreId}`));
-        await set(transactionRef, {
-          ...transactionData,
-          storeId: state.currentStoreId,
-          storeName: state.currentStore.name
-        });
-      } catch (error) {
-        console.error('Failed to save transaction:', error);
-      }
-    }
-
-    function generateQRCode() {
-      if (!state.currentStore || !state.currentStore.qris) {
-        elements.qrContainer.innerHTML = `
-          <div class="text-center p-8">
-            <div class="w-48 h-48 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <i class="fas fa-exclamation-triangle text-4xl text-yellow-500"></i>
-            </div>
-            <p class="text-slate-600">QRIS belum diatur</p>
-            <p class="text-sm text-slate-400 mt-1">Admin dapat mengatur QRIS</p>
-          </div>
-        `;
-        return;
-      }
-      
-      // Clear existing QR
-      elements.qrContainer.innerHTML = '<div class="qrcode-container"></div>';
-      
-      // Generate new QR
-      const qrContainer = elements.qrContainer.querySelector('.qrcode-container');
-      
-      // Destroy previous instance
-      if (state.qrCodeInstance) {
-        state.qrCodeInstance.clear();
-      }
-      
-      state.qrCodeInstance = new QRCode(qrContainer, {
-        text: state.currentStore.qris,
-        width: 200,
-        height: 200,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-    }
-
-    function toggleCustomAmount() {
-      if (state.currentStore && state.currentStore.allowCustomAmount) {
-        const customAmount = prompt('Masukkan nominal custom (Rp):');
-        if (customAmount && parseInt(customAmount) > 0) {
-          elements.dispAmount.textContent = formatCurrency(parseInt(customAmount));
-          elements.amountNote.textContent = 'Nominal custom';
+    window.deleteProd = (i) => {
+        if(confirm("Hapus?")) {
+            storeData.products.splice(i, 1);
+            renderAdminProducts();
         }
-      } else {
-        showToast('Custom nominal tidak diizinkan untuk toko ini', 'info');
-      }
-    }
-
-    function loadRecentStores() {
-      if (state.recentStores.length === 0) {
-        elements.recentStores.classList.add('hidden');
-        return;
-      }
-      
-      elements.recentList.innerHTML = state.recentStores.map(store => `
-        <button onclick="loadStoreFromRecent('${store.id}')" 
-                class="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition flex justify-between items-center">
-          <div>
-            <p class="font-medium text-slate-700">${store.name}</p>
-            <p class="text-xs text-slate-500 font-mono">${store.id}</p>
-          </div>
-          <i class="fas fa-chevron-right text-slate-400"></i>
-        </button>
-      `).join('');
-      
-      elements.recentStores.classList.remove('hidden');
-    }
-
-    function addToRecentStores(storeId, storeName) {
-      // Remove if already exists
-      state.recentStores = state.recentStores.filter(store => store.id !== storeId);
-      
-      // Add to beginning
-      state.recentStores.unshift({
-        id: storeId,
-        name: storeName,
-        timestamp: Date.now()
-      });
-      
-      // Keep only last 5
-      state.recentStores = state.recentStores.slice(0, 5);
-      
-      // Save to localStorage
-      localStorage.setItem('recentStores', JSON.stringify(state.recentStores));
-      
-      // Update UI
-      loadRecentStores();
-    }
-
-    function checkUrlStore() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlStore = urlParams.get('store');
-      
-      if (urlStore) {
-        elements.storeIdInput.value = urlStore;
-        // Auto-check after a delay
-        setTimeout(() => {
-          if (urlStore.trim().length > 0) {
-            checkStore();
-          }
-        }, 500);
-      }
-    }
-
-    function updateUrlWithStore(storeId) {
-      const newUrl = `${window.location.pathname}?store=${storeId}`;
-      window.history.pushState({ storeId }, '', newUrl);
-    }
-
-    function formatCurrency(amount) {
-      return 'Rp ' + parseInt(amount).toLocaleString('id-ID');
-    }
-
-    function formatDate(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    // Make functions available globally for onclick handlers
-    window.loadStoreFromRecent = function(storeId) {
-      elements.storeIdInput.value = storeId;
-      checkStore();
     };
-    
-    window.selectProduct = selectProduct;
-    window.editProduct = showProductForm;
-    window.deleteProductConfirm = deleteProductConfirm;
-    window.copyToClipboard = function(elementId) {
-      const element = document.getElementById(elementId);
-      navigator.clipboard.writeText(element.value).then(() => {
-        showToast('Disalin ke clipboard', 'success');
-      });
-    };
+
+    // --- QR GENERATOR ---
+    function generateQR(amount) {
+        const container = document.getElementById('qrContainer');
+        container.innerHTML = "";
+        
+        let finalString = storeData.qris;
+        if(!finalString) {
+            container.innerHTML = `<span class="text-xs text-red-400 font-bold">⚠️ QRIS Belum diupload Admin</span>`;
+            return;
+        }
+
+        if(amount > 0) {
+            try { finalString = injectAmount(finalString, amount); } catch(e) {}
+        }
+
+        new QRCode(container, {
+            text: finalString,
+            width: 180,
+            height: 180,
+            colorDark : "#1e293b",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M
+        });
+    }
+
+    function injectAmount(payload, amount) {
+        let p = payload.slice(0, -4);
+        p = p.replace("010211", "010212");
+        const amStr = amount + ".00";
+        const tag54 = "54" + amStr.length.toString().padStart(2,'0') + amStr;
+        
+        if(p.includes("5802ID")) {
+            const idx = p.indexOf("5802ID");
+            p = p.slice(0, idx) + tag54 + p.slice(idx);
+        } else {
+            p = p + tag54;
+        }
+        return p + crc16(p);
+    }
+
+    function crc16(s) {
+        let crc = 0xFFFF;
+        for (let i = 0; i < s.length; i++) {
+            crc ^= s.charCodeAt(i) << 8;
+            for (let j = 0; j < 8; j++) {
+                crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+                crc = crc & 0xFFFF;
+            }
+        }
+        return crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    // Expose Global
+    window.selectItem = window.selectItem;
+    window.resetSelection = window.resetSelection;
+    window.previewProof = window.previewProof;
+    window.processCheckout = window.processCheckout;
+    window.openAdmin = window.openAdmin;
+    window.closeAdmin = window.closeAdmin;
+    window.loginAdmin = window.loginAdmin;
+    window.saveSettings = window.saveSettings;
+    window.addProduct = window.addProduct;
+    window.deleteProd = window.deleteProd;
+
   </script>
 </body>
-  </html>
+</html>
