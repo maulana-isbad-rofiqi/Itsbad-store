@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Kasir Online - Debug Mode</title>
+  <title>Kasir Online - Final Fix</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -15,22 +15,13 @@
 </head>
 <body class="flex justify-center min-h-screen text-slate-800">
 
-  <script>
-    // Ini akan menangkap error yang bikin macet dan menampilkannya di layar
-    window.onerror = function(message, source, lineno, colno, error) {
-      alert("ERROR DETECTED:\n" + message + "\nBaris: " + lineno);
-      document.getElementById('statusText').innerText = "System Error";
-      document.getElementById('statusText').style.color = "red";
-    };
-  </script>
-
   <div class="w-full max-w-md bg-white shadow-2xl min-h-screen relative flex flex-col">
     
     <div class="bg-indigo-600 text-white p-6 pt-8 rounded-b-[2rem] shadow-lg z-10 relative">
       <div class="flex justify-between items-center mb-2">
         <div>
           <h1 class="text-2xl font-bold tracking-tight">Kasir Online</h1>
-          <p class="text-indigo-200 text-xs opacity-80">V3.0 (Debug Mode)</p>
+          <p class="text-indigo-200 text-xs opacity-80">V4.0 Stable</p>
         </div>
         <div class="bg-white/10 px-3 py-1 rounded-full text-[10px] backdrop-blur-md flex items-center gap-2 border border-white/20">
           <div id="loaderIcon" class="loader"></div> 
@@ -53,50 +44,28 @@
             <input type="text" id="storeIdInput" placeholder="Contoh: tokomu" class="w-full p-4 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold uppercase text-slate-700 tracking-wider focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all">
           </div>
           
-          <button onclick="checkStore()" class="w-full mt-4 bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">MASUK SEKARANG</button>
+          <button id="btnLogin" class="w-full mt-4 bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all">MASUK SEKARANG</button>
         </div>
-        <p class="text-[10px] text-slate-400">Jika tombol tidak bisa diklik, refresh halaman.</p>
       </div>
 
       <div id="page-setup" class="hidden">
         <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
           <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fas fa-cog text-slate-400"></i> Setup Toko</h3>
-          <button onclick="logout()" class="text-xs text-red-500 font-bold hover:bg-red-50 px-3 py-1 rounded-lg transition">Keluar</button>
+          <button id="btnLogoutSetup" class="text-xs text-red-500 font-bold hover:bg-red-50 px-3 py-1 rounded-lg transition">Keluar</button>
         </div>
 
         <div class="space-y-4">
-          <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-xs text-blue-700 mb-4">
-            <i class="fas fa-info-circle mr-1"></i> Mode Admin (Setup)
-          </div>
-
-          <div>
-            <label class="text-xs font-bold text-slate-500 ml-1">ID Toko</label>
-            <input type="text" id="setupId" disabled class="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 uppercase">
-          </div>
+          <div><label class="text-xs font-bold text-slate-500 ml-1">ID Toko</label><input type="text" id="setupId" disabled class="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 uppercase"></div>
+          <div><label class="text-xs font-bold text-slate-500 ml-1">Nama Toko</label><input type="text" id="setupName" placeholder="Contoh: Warung Berkah" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none"></div>
+          <div><label class="text-xs font-bold text-slate-500 ml-1">Nomor WhatsApp</label><input type="tel" id="setupWa" placeholder="08xxxxxxxxxx" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none"></div>
+          <div><label class="text-xs font-bold text-slate-500 ml-1">Nominal Default</label><input type="number" id="setupAmount" placeholder="Kosongkan jika bebas" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none"></div>
           
-          <div>
-            <label class="text-xs font-bold text-slate-500 ml-1">Nama Toko</label>
-            <input type="text" id="setupName" placeholder="Contoh: Warung Berkah" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none">
-          </div>
-
-          <div>
-             <label class="text-xs font-bold text-slate-500 ml-1">Nomor WhatsApp</label>
-             <input type="tel" id="setupWa" placeholder="08xxxxxxxxxx" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none">
-          </div>
-
-          <div>
-             <label class="text-xs font-bold text-slate-500 ml-1">Nominal Default (Opsional)</label>
-             <input type="number" id="setupAmount" placeholder="Kosongkan jika bebas input" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none">
-          </div>
-
-          <div class="p-4 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-center hover:bg-slate-100 transition cursor-pointer relative">
+          <div class="p-4 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-center relative">
             <input type="file" id="qrisFile" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
-            <i class="fas fa-qrcode text-2xl text-slate-400 mb-2"></i>
-            <p class="text-xs font-bold text-slate-500">Upload Gambar QRIS</p>
-            <p class="text-[10px] text-slate-400">Klik untuk pilih file</p>
+            <p class="text-xs font-bold text-slate-500">Upload QRIS Baru</p>
           </div>
           
-          <button onclick="saveToCloud()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg mt-4 hover:bg-slate-900 transition">SIMPAN KE CLOUD ☁️</button>
+          <button id="btnSave" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg mt-4 hover:bg-slate-900 transition">SIMPAN KE CLOUD ☁️</button>
         </div>
       </div>
 
@@ -108,50 +77,33 @@
           </div>
         </div>
 
-        <div class="bg-white p-5 rounded-3xl shadow-xl shadow-slate-200 border border-slate-100 flex flex-col items-center relative overflow-hidden">
-          <div class="absolute top-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-          
-          <div class="mt-4 mb-4">
-             <div id="qrContainer" class="p-1 bg-white"></div>
-          </div>
-          
+        <div class="bg-white p-5 rounded-3xl shadow-xl border border-slate-100 flex flex-col items-center">
+          <div id="qrContainer" class="p-1 bg-white my-4"></div>
           <h2 id="dispAmount" class="text-2xl font-bold text-slate-800 mb-1">Rp 0</h2>
-          <p class="text-[10px] text-slate-400">Scan menggunakan E-Wallet / M-Banking</p>
         </div>
 
-        <div class="mt-6">
-          <h3 class="font-bold text-sm text-slate-700 mb-3 ml-1">Konfirmasi Pembayaran</h3>
-          <div class="space-y-3">
-             <input type="text" id="custName" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none shadow-sm transition" placeholder="Nama Kamu">
-             <input type="text" id="custNote" class="w-full p-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none shadow-sm transition" placeholder="Catatan (Opsional)">
-          </div>
-          
-          <button onclick="sendWA()" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-200 flex items-center justify-center gap-2 active:scale-95 transition">
-            <i class="fab fa-whatsapp text-xl"></i> Kirim Bukti Bayar
-          </button>
-
-          <div class="mt-8 text-center border-t border-slate-200 pt-4">
-             <p class="text-[10px] text-slate-400 mb-2">Ingin ubah data toko?</p>
-             <button onclick="switchToAdmin()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-4 py-2 rounded-lg transition">Masuk sebagai Admin</button>
-          </div>
+        <div class="mt-6 space-y-3">
+           <input type="text" id="custName" class="w-full p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Nama Kamu">
+           <input type="text" id="custNote" class="w-full p-3.5 border border-slate-200 rounded-xl text-sm" placeholder="Catatan">
         </div>
         
-        <div class="mt-6 text-center pb-4">
-             <p class="text-[10px] text-slate-400 mb-1">Link bayar untuk pelanggan:</p>
-             <div id="shareLink" class="bg-slate-100 p-2 rounded-lg text-[10px] text-slate-500 break-all font-mono select-all cursor-pointer">...</div>
+        <button id="btnSendWA" class="w-full mt-4 bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2">
+          <i class="fab fa-whatsapp text-xl"></i> Kirim Bukti Bayar
+        </button>
+
+        <div class="mt-8 text-center pt-4">
+             <button id="btnSwitchAdmin" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg">Masuk Admin</button>
         </div>
       </div>
-
     </div>
   </div>
 
   <script type="module">
-    // --- 1. IMPORT FIREBASE ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import jsQR from "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.mjs";
 
-    // --- 2. CONFIG ---
+    // 1. CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAUL2WkPlJLb8wHcSKQ_QA7GSZ5DGw94Ng",
       authDomain: "kasir-online-c22bd.firebaseapp.com",
@@ -163,125 +115,120 @@
       measurementId: "G-QR6HPRX459"
     };
 
-    // --- 3. INITIALIZE WITH ERROR HANDLING ---
+    // 2. INIT & GLOBAL VARS
     let app, db;
-    try {
-        app = initializeApp(firebaseConfig);
-        db = getDatabase(app);
-        console.log("Firebase initialized successfully");
-        
-        // JIKA BERHASIL LOAD SCRIPT, UBAH STATUS JADI ONLINE
-        setTimeout(() => {
-            const statusText = document.getElementById('statusText');
-            if(statusText.innerText === "Connecting...") {
-                statusText.innerText = "Online";
-                document.getElementById('loaderIcon').classList.remove('loader');
-                document.getElementById('loaderIcon').classList.add('bg-green-400', 'w-2', 'h-2', 'rounded-full');
-            }
-        }, 1500); // Delay dikit biar kelihatan loadingnya
-        
-    } catch (error) {
-        alert("CRITICAL ERROR: Gagal connect ke Firebase.\n" + error.message);
-    }
-
-    // --- DOM Elements ---
-    const pageHome = document.getElementById('page-home');
-    const pageSetup = document.getElementById('page-setup');
-    const pageCashier = document.getElementById('page-cashier');
-
-    // --- GLOBAL VARS ---
     let currentStoreId = "";
     let currentData = {};
 
-    // --- EXPOSE FUNCTIONS ---
-    window.checkStore = checkStore;
-    window.saveToCloud = saveToCloud;
-    window.sendWA = sendWA;
-    window.logout = logout;
-    window.switchToAdmin = renderSetup;
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getDatabase(app);
+      
+      // Update UI Status jika berhasil load
+      document.getElementById('statusText').innerText = "Ready";
+      document.getElementById('loaderIcon').classList.remove('loader');
+      document.getElementById('loaderIcon').classList.add('bg-green-400', 'w-2', 'h-2', 'rounded-full');
+      console.log("Firebase Connected");
 
-    // --- LOAD QR LIB ---
-    const qrScript = document.createElement('script');
-    qrScript.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-    document.body.appendChild(qrScript);
+    } catch (e) {
+      alert("Gagal Init Firebase: " + e.message);
+    }
 
-    // --- AUTO LOGIN ---
+    // 3. EVENT LISTENERS (INI KUNCI PERBAIKANNYA)
+    // Kita pasang fungsi ke tombol secara manual lewat JS, bukan lewat HTML
+    document.getElementById('btnLogin').addEventListener('click', checkStore);
+    document.getElementById('btnSave').addEventListener('click', saveToCloud);
+    document.getElementById('btnSendWA').addEventListener('click', sendWA);
+    document.getElementById('btnLogoutSetup').addEventListener('click', logout);
+    document.getElementById('btnSwitchAdmin').addEventListener('click', renderSetup);
+
+    // Load QR Lib
+    const s = document.createElement('script');
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+    document.body.appendChild(s);
+
+    // Auto Login URL
     const urlParams = new URLSearchParams(window.location.search);
     const urlStore = urlParams.get('store');
     if(urlStore) {
         document.getElementById('storeIdInput').value = urlStore;
-        // Tunggu library load
         setTimeout(checkStore, 1000);
     }
 
-    // --- FUNCTIONS ---
+    // --- LOGIC FUNCTIONS ---
 
     function checkStore() {
+        const btn = document.getElementById('btnLogin');
         let id = document.getElementById('storeIdInput').value.trim();
-        if(!id) return alert("Isi ID Toko dulu!");
         
+        if(!id) return alert("Isi ID Toko dulu!");
         id = id.toLowerCase().replace(/[^a-z0-9-]/g, '-');
         currentStoreId = id;
 
-        // Ubah text loading
-        const btn = document.querySelector('button[onclick="checkStore()"]');
-        const originalText = btn.innerText;
         btn.innerText = "Mengecek...";
         btn.disabled = true;
 
-        if(!db) { alert("Database belum siap! Refresh halaman."); return; }
+        if(!db) return alert("Database belum siap. Cek koneksi.");
 
-        const dbRef = ref(db);
-        get(child(dbRef, `stores/${id}`)).then((snapshot) => {
+        get(child(ref(db), `stores/${id}`)).then((snapshot) => {
             if (snapshot.exists()) {
                 currentData = snapshot.val();
                 renderCashier();
             } else {
-                if(confirm(`Toko "${id}" belum ada.\n\nMau buat baru sebagai Admin?`)) {
+                if(confirm(`Toko "${id}" tidak ditemukan. Buat baru?`)) {
                     renderSetup();
                 }
             }
-            btn.innerText = originalText;
+            btn.innerText = "MASUK SEKARANG";
             btn.disabled = false;
-        }).catch((error) => {
-            alert("GAGAL BACA DATA:\n" + error.message + "\n\nCek Koneksi Internet!");
-            btn.innerText = originalText;
+        }).catch((err) => {
+            alert("Error: " + err.message);
+            btn.innerText = "MASUK SEKARANG";
             btn.disabled = false;
         });
     }
 
     function renderSetup() {
-        pageHome.classList.add('hidden');
-        pageCashier.classList.add('hidden');
-        pageSetup.classList.remove('hidden');
+        hideAll();
+        document.getElementById('page-setup').classList.remove('hidden');
         document.getElementById('setupId').value = currentStoreId;
-        
         if(currentData.name) {
             document.getElementById('setupName').value = currentData.name;
-            document.getElementById('setupWa').value = currentData.wa.replace('62','0');
+            document.getElementById('setupWa').value = currentData.wa ? currentData.wa.replace('62','0') : "";
             document.getElementById('setupAmount').value = currentData.amount || "";
         }
     }
 
     async function saveToCloud() {
+        const btn = document.getElementById('btnSave');
         const name = document.getElementById('setupName').value;
         let wa = document.getElementById('setupWa').value;
         const amount = document.getElementById('setupAmount').value;
         const fileInput = document.getElementById('qrisFile');
 
-        if(!name || !wa) return alert("Nama Toko & WA Wajib diisi!");
+        if(!name || !wa) return alert("Nama & WA wajib diisi!");
+        
+        btn.innerText = "Menyimpan...";
+        btn.disabled = true;
 
         let qrisString = currentData.qris || "";
-
         if(fileInput.files[0]) {
             try {
                 qrisString = await processQRImage(fileInput.files[0]);
-            } catch (e) {
-                return alert("QRIS Error: " + e);
+            } catch(e) {
+                alert("Gagal baca QR: " + e);
+                btn.innerText = "SIMPAN KE CLOUD ☁️";
+                btn.disabled = false;
+                return;
             }
         }
 
-        if(!qrisString) return alert("Wajib upload foto QRIS!");
+        if(!qrisString) {
+             alert("Wajib upload QRIS!");
+             btn.innerText = "SIMPAN KE CLOUD ☁️";
+             btn.disabled = false;
+             return;
+        }
 
         wa = wa.replace(/\D/g, '');
         if(wa.startsWith('0')) wa = '62' + wa.substring(1);
@@ -294,39 +241,52 @@
             updatedAt: Date.now()
         };
 
-        set(ref(db, 'stores/' + currentStoreId), newData)
-            .then(() => {
-                alert("BERHASIL! Data tersimpan.");
-                currentData = newData;
-                renderCashier();
-            })
-            .catch((error) => {
-                alert("GAGAL SIMPAN: " + error.message);
-            });
+        set(ref(db, 'stores/' + currentStoreId), newData).then(() => {
+            alert("Data Tersimpan!");
+            currentData = newData;
+            renderCashier();
+            btn.innerText = "SIMPAN KE CLOUD ☁️";
+            btn.disabled = false;
+        });
     }
 
     function renderCashier() {
-        pageHome.classList.add('hidden');
-        pageSetup.classList.add('hidden');
-        pageCashier.classList.remove('hidden');
-
+        hideAll();
+        document.getElementById('page-cashier').classList.remove('hidden');
         document.getElementById('dispName').innerText = currentData.name;
         document.getElementById('dispId').innerText = currentStoreId;
-        document.getElementById('dispAmount').innerText = currentData.amount > 0 
-            ? "Rp " + parseInt(currentData.amount).toLocaleString('id-ID')
-            : "Nominal Bebas";
-
+        document.getElementById('dispAmount').innerText = currentData.amount > 0 ? "Rp " + parseInt(currentData.amount).toLocaleString('id-ID') : "Nominal Bebas";
+        
         generateQRDisplay(currentData.qris, currentData.amount);
-
-        const baseUrl = window.location.href.split('?')[0];
-        const fullLink = `${baseUrl}?store=${currentStoreId}`;
-        document.getElementById('shareLink').innerText = fullLink;
         
         // Update URL
-        window.history.pushState({}, '', `?store=${currentStoreId}`);
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?store=' + currentStoreId;
+        window.history.pushState({path:newUrl},'',newUrl);
     }
 
-    // --- HELPERS ---
+    function sendWA() {
+        const name = document.getElementById('custName').value;
+        const note = document.getElementById('custNote').value;
+        if(!name) return alert("Isi nama kamu dulu!");
+        
+        const total = currentData.amount > 0 ? "Rp "+parseInt(currentData.amount).toLocaleString('id-ID') : "Sesuai Aplikasi";
+        const text = `*PEMBAYARAN QRIS*\n------------------\n🛒 Toko: ${currentData.name}\n👤 Nama: *${name}*\n💰 Nominal: *${total}*\n📝 Note: ${note}\n------------------\nBukti TF terlampir 📸`;
+        window.open(`https://wa.me/${currentData.wa}?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function logout() {
+        if(confirm("Keluar dari toko?")) {
+            window.location.href = window.location.href.split('?')[0];
+        }
+    }
+
+    function hideAll() {
+        document.getElementById('page-home').classList.add('hidden');
+        document.getElementById('page-setup').classList.add('hidden');
+        document.getElementById('page-cashier').classList.add('hidden');
+    }
+
+    // --- HELPER QR ---
     function processQRImage(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -342,7 +302,7 @@
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const code = jsQR(imageData.data, canvas.width, canvas.height);
                     if(code) resolve(code.data);
-                    else reject("QR Code tidak ditemukan di gambar ini.");
+                    else reject("QR tidak terbaca");
                 };
             };
             reader.readAsDataURL(file);
@@ -355,8 +315,7 @@
         
         let finalString = rawString;
         if(amount > 0) {
-            try { finalString = injectNominal(rawString, amount); } 
-            catch(e) { console.error(e); }
+            try { finalString = injectNominal(rawString, amount); } catch(e) {}
         }
 
         if(typeof QRCode === 'undefined') {
@@ -368,7 +327,7 @@
             text: finalString,
             width: 200,
             height: 200,
-            colorDark : "#1e1e2e",
+            colorDark : "#000000",
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.M
         });
@@ -380,31 +339,12 @@
         
         let t = parse(payload).filter(x=>x.id!=='63');
         let i01 = t.findIndex(x=>x.id==='01'); if(i01>=0)t[i01].val='12';
-        
         let am = parseFloat(amount).toFixed(2);
         let t54 = {id:'54',val:am};
         let i54 = t.findIndex(x=>x.id==='54'); let i53 = t.findIndex(x=>x.id==='53');
-        
         if(i54>=0)t[i54]=t54; else if(i53>=0)t.splice(i53+1,0,t54); else t.push(t54);
-        
         let body = t.map(i=>i.id+i.val.length.toString().padStart(2,'0')+i.val).join('');
         return body+"6304"+crc16(body+"6304");
-    }
-
-    function sendWA() {
-        const name = document.getElementById('custName').value;
-        const note = document.getElementById('custNote').value;
-        if(!name) return alert("Isi nama dulu!");
-        
-        const total = currentData.amount > 0 ? "Rp "+parseInt(currentData.amount).toLocaleString('id-ID') : "Sesuai Aplikasi";
-        const text = `*PEMBAYARAN QRIS*\n------------------\n🛒 Toko: ${currentData.name}\n👤 Nama: *${name}*\n💰 Nominal: *${total}*\n📝 Note: ${note}\n------------------\nBukti TF terlampir 📸`;
-        window.open(`https://wa.me/${currentData.wa}?text=${encodeURIComponent(text)}`, '_blank');
-    }
-
-    function logout() {
-        if(confirm("Yakin mau keluar?")) {
-            window.location.href = window.location.href.split('?')[0];
-        }
     }
   </script>
 </body>
