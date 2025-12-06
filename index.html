@@ -13,14 +13,14 @@
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Poppins', sans-serif; background-color: #f1f5f9; }
+    body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; }
     .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #4f46e5; width: 16px; height: 16px; animation: spin 1s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    /* Style khusus untuk container QR */
-    #qrContainer { overflow: hidden; display: flex; justify-content: center; align-items: center; }
-    #qrContainer img { max-width: 100%; border-radius: 8px; border: 4px solid white; }
+    #qrContainer img { margin: 0 auto; border: 8px solid white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 100%; }
     .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .modal-enter { animation: modalIn 0.3s ease-out forwards; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
   </style>
 </head>
 <body class="flex justify-center min-h-screen text-slate-800">
@@ -33,7 +33,7 @@
                 <i class="fas fa-user text-slate-400"></i>
             </div>
             <div>
-                <h1 class="text-sm font-bold leading-tight truncate w-32 text-indigo-900" id="shopNameDisplay">Itsbad Store</h1>
+                <h1 class="text-sm font-bold leading-tight truncate w-32 text-indigo-900" id="shopNameDisplay">Loading...</h1>
                 <p class="text-[10px] text-slate-500 truncate w-24" id="userNameDisplay">Tamu</p>
             </div>
         </div>
@@ -77,7 +77,7 @@
 
     <div id="productModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="window.closeProductModal()"></div>
-        <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative z-10">
+        <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative z-10 modal-enter">
             <button onclick="window.closeProductModal()" class="absolute top-3 right-3 w-8 h-8 bg-black/30 text-white rounded-full flex items-center justify-center z-20 backdrop-blur-md"><i class="fas fa-times"></i></button>
             <div class="h-56 bg-slate-100 flex items-center justify-center relative">
                 <i class="fas fa-box text-6xl text-slate-300"></i>
@@ -118,9 +118,9 @@
                 <p class="text-xs text-slate-400">Ketuk kamera untuk ubah foto</p>
             </div>
             <div class="space-y-5">
-                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nama Lengkap</label><input type="text" id="profName" class="w-full p-4 border rounded-2xl text-sm" placeholder="Nama Anda"></div>
-                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nomor WhatsApp</label><input type="tel" id="profWa" class="w-full p-4 border rounded-2xl text-sm" placeholder="08xxxxxxxx"></div>
-                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Alamat Pengiriman</label><textarea id="profAddress" rows="3" class="w-full p-4 border rounded-2xl text-sm" placeholder="Alamat lengkap..."></textarea></div>
+                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nama Lengkap</label><input type="text" id="profName" class="w-full p-4 border rounded-2xl text-sm bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition" placeholder="Nama Anda"></div>
+                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Nomor WhatsApp</label><input type="tel" id="profWa" class="w-full p-4 border rounded-2xl text-sm bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition" placeholder="08xxxxxxxx"></div>
+                <div><label class="text-xs font-bold text-slate-500 ml-1 uppercase">Alamat Pengiriman</label><textarea id="profAddress" rows="3" class="w-full p-4 border rounded-2xl text-sm bg-slate-50 focus:bg-white focus:border-indigo-500 outline-none transition" placeholder="Alamat lengkap..."></textarea></div>
                 <button onclick="window.saveProfile()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold mt-4 shadow-xl hover:bg-slate-800 transition">SIMPAN PROFIL</button>
             </div>
         </div>
@@ -184,7 +184,7 @@
     <div id="adminPanel" class="fixed inset-0 bg-slate-50 z-[70] hidden overflow-y-auto">
         <div class="sticky top-0 bg-white p-4 shadow-sm flex justify-between items-center z-10">
             <h2 class="font-bold text-lg text-slate-800">Admin Dashboard</h2>
-            <button onclick="window.location.href=window.location.pathname" class="text-sm font-bold text-red-500 bg-red-50 px-3 py-1 rounded-lg">Keluar</button>
+            <button onclick="document.getElementById('adminPanel').classList.add('hidden')" class="text-sm font-bold text-red-500 bg-red-50 px-3 py-1 rounded-lg">Keluar</button>
         </div>
         
         <div id="adminLoginForm" class="p-10 text-center mt-20">
@@ -205,7 +205,6 @@
                         <i class="fas fa-info-circle"></i> Upload QRIS Anda. Foto akan otomatis dikompres agar bisa tersimpan.
                     </div>
                     <input type="file" id="qrisUpload" class="text-xs w-full mb-2 text-indigo-600" accept="image/*">
-                    <input type="hidden" id="qrisType" value="static">
                     <textarea id="setQris" class="w-full p-2 text-[10px] bg-white rounded border text-slate-400 font-mono h-16" rows="2" readonly placeholder="Data QRIS akan muncul disini..."></textarea>
                 </div>
                 <button onclick="window.saveSettings()" class="w-full bg-indigo-600 text-white py-3 rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition">SIMPAN PENGATURAN</button>
@@ -258,7 +257,7 @@
 
     toastr.options = { "positionClass": "toast-top-center", "timeOut": "2000" };
     let db, auth, user;
-    let storeData = { name: "Itsbad Store", fee: 0, products: [], qris: "", qrisType: "static" };
+    let storeData = { name: "Itsbad Store", fee: 0, products: [], qris: "" };
     let cart = JSON.parse(localStorage.getItem('myCart')) || [];
     let userData = { name: "", wa: "", address: "", avatar: "" };
     let grandTotal = 0;
@@ -320,12 +319,23 @@
     document.getElementById('avatarUpload').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if(!file) return;
+        
+        // Kompres Foto Profil (Resizer)
         const reader = new FileReader();
         reader.onload = (ev) => {
-            resizeImage(ev.target.result, 300, (resized) => {
-                userData.avatar = resized;
+            const img = new Image();
+            img.src = ev.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxWidth = 300; // Resize ke 300px lebar
+                const scaleSize = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                userData.avatar = canvas.toDataURL('image/jpeg', 0.7); // Kompres kualitas 70%
                 updateProfileUI();
-            });
+            }
         };
         reader.readAsDataURL(file);
     });
@@ -338,7 +348,7 @@
                 storeData = snap.val();
                 if(!storeData.products) storeData.products = [];
             } else {
-                storeData = { name: "Itsbad Store", fee: 0, products: [], qris: "", qrisType: "static" };
+                storeData = { name: "Itsbad Store", fee: 0, products: [], qris: "" };
             }
             renderStore();
         } catch(e) { toastr.error("Gagal load data"); }
@@ -366,7 +376,7 @@
         updateCartBadge();
     }
 
-    // --- CART ---
+    // --- CART & MODALS ---
     window.openProductDetail = (index) => {
         const p = storeData.products[index];
         document.getElementById('modalProdName').innerText = p.name;
@@ -390,7 +400,6 @@
     };
 
     window.closeProductModal = () => document.getElementById('productModal').classList.add('hidden');
-
     window.addToCart = (index) => {
         const p = storeData.products[index];
         const exist = cart.find(c => c.index === index);
@@ -403,20 +412,17 @@
         saveCart();
         toastr.success("Masuk Keranjang");
     };
-
     window.updateQty = (idx, change) => {
         if(cart[idx].qty + change > 0 && cart[idx].qty + change <= cart[idx].stock) cart[idx].qty += change;
         else if (cart[idx].qty + change <= 0) if(confirm("Hapus item?")) cart.splice(idx, 1);
         saveCart();
     };
-
     function saveCart() { localStorage.setItem('myCart', JSON.stringify(cart)); updateCartBadge(); renderCart(); }
     function updateCartBadge() {
         const count = cart.reduce((a, b) => a + b.qty, 0);
         document.getElementById('cartCount').innerText = count;
         count > 0 ? document.getElementById('cartCount').classList.remove('hidden') : document.getElementById('cartCount').classList.add('hidden');
     }
-
     window.toggleCart = () => {
         const sheet = document.getElementById('cartSheet');
         const modal = document.getElementById('cartBackdrop');
@@ -431,7 +437,6 @@
             sheet.classList.add('translate-y-full');
         }
     };
-
     function renderCart() {
         const el = document.getElementById('cartItems');
         el.innerHTML = "";
@@ -497,7 +502,7 @@
         let itemsList = "";
         cart.forEach(c => { itemsList += `▪️ ${c.name} (${c.qty}x) - Rp ${(c.qty*c.price).toLocaleString()}\n`; });
         const fee = parseInt(storeData.fee || 0);
-        const msg = `*ORDER BARU*\n────────────────\n👤 ${userData.name}\n📱 ${userData.wa || '-'}\n📍 ${userData.address || '-'}\n\n*Pesanan:*\n${itemsList}\nLayanan: Rp ${fee.toLocaleString()}\n*TOTAL: Rp ${grandTotal.toLocaleString()}*\nMetode: QRIS\n────────────────\nUser melampirkan bukti transfer.`;
+        const msg = `*ORDER BARU V9*\n────────────────\n👤 ${userData.name}\n📱 ${userData.wa || '-'}\n📍 ${userData.address || '-'}\n\n*Pesanan:*\n${itemsList}\nLayanan: Rp ${fee.toLocaleString()}\n*TOTAL: Rp ${grandTotal.toLocaleString()}*\nMetode: QRIS\n────────────────\nUser melampirkan bukti transfer.`;
         window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(msg)}`, '_blank');
         
         cart = []; saveCart(); location.reload();
@@ -516,7 +521,7 @@
 
         // Cek apakah string (Dynamic) atau Image Base64 (Static)
         if(qrisData.startsWith('data:image')) {
-            // Mode Gambar Static
+            // Mode Gambar Static (Personal)
             const img = document.createElement('img');
             img.src = qrisData;
             img.style.maxWidth = '100%';
@@ -524,7 +529,7 @@
             container.appendChild(img);
             document.getElementById('qrNote').innerHTML = "<i class='fas fa-info-circle text-orange-500'></i> Input nominal manual";
         } else {
-            // Mode Dynamic String
+            // Mode Dynamic String (Bisnis)
             try {
                 const finalString = injectAmount(qrisData, amount);
                 new QRCode(container, { text: finalString, width: 200, height: 200, colorDark : "#1e293b", colorLight : "#ffffff" });
@@ -585,27 +590,13 @@
     window.saveSettings = async () => {
         storeData.name = document.getElementById('setStoreName').value;
         storeData.fee = parseInt(document.getElementById('setFee').value) || 0;
-        // Note: QRIS saved via upload handler immediately to memory
+        // QRIS disimpan langsung saat upload, jadi update sisanya
         await update(ref(db, `stores/${STORE_ID}`), storeData);
         toastr.success("Tersimpan!");
+        location.reload();
     }
 
-    // IMAGE RESIZER UTILITY
-    function resizeImage(base64Str, maxWidth, callback) {
-        const img = new Image();
-        img.src = base64Str;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ratio = maxWidth / img.width;
-            canvas.width = maxWidth;
-            canvas.height = img.height * ratio;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            callback(canvas.toDataURL('image/jpeg', 0.8));
-        };
-    }
-
-    // QRIS UPLOAD HANDLER (HYBRID MODE)
+    // --- QRIS UPLOAD (RESIZER FIX) ---
     document.getElementById('qrisUpload').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -613,8 +604,9 @@
         
         const reader = new FileReader();
         reader.onload = (ev) => {
-            // 1. Try Decode QR (Dynamic)
+            // 1. Coba Baca Kode (Dynamic)
             const img = new Image();
+            img.src = ev.target.result;
             img.onload = () => {
                 const cvs = document.createElement("canvas");
                 cvs.width = img.width; cvs.height = img.height;
@@ -625,18 +617,24 @@
                 
                 if(code) {
                     storeData.qris = code.data;
-                    document.getElementById('setQris').value = code.data;
+                    document.getElementById('setQris').value = "Berhasil: QR Code String (Dynamic Mode)";
                     toastr.success("QRIS Terbaca (Mode Dinamis)");
                 } else {
-                    // 2. If Failed, Use Image (Static) - Resize first to save DB
-                    resizeImage(ev.target.result, 600, (resized) => {
-                        storeData.qris = resized;
-                        document.getElementById('setQris').value = "Image Data Saved (Mode Statis)";
-                        toastr.warning("QR tak terbaca. Disimpan sebagai gambar.");
-                    });
+                    // 2. Gagal Baca? Kompres Jadi Gambar (Static)
+                    // RESIZE IMAGE SUPAYA MUAT DI FIREBASE (Max 500px lebar)
+                    const maxWidth = 500;
+                    const scaleSize = maxWidth / img.width;
+                    const canvas = document.createElement("canvas");
+                    canvas.width = maxWidth;
+                    canvas.height = img.height * scaleSize;
+                    const ctx2 = canvas.getContext("2d");
+                    ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    storeData.qris = canvas.toDataURL("image/jpeg", 0.7); // Kompres 70%
+                    document.getElementById('setQris').value = "Berhasil: Image Data Saved (Mode Statis)";
+                    toastr.warning("QR tak terbaca. Disimpan sebagai gambar.");
                 }
             };
-            img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
     });
@@ -661,25 +659,26 @@
         }
     }
 
-    // Expose
+    // Expose Global
     window.toggleCart = window.toggleCart;
-    window.loginGoogle = window.loginGoogle;
-    window.loginGuest = window.loginGuest;
-    window.openProductDetail = window.openProductDetail;
-    window.closeProductModal = window.closeProductModal;
     window.addToCart = window.addToCart;
     window.updateQty = window.updateQty;
-    window.openProfile = window.openProfile;
-    window.closeProfile = window.closeProfile;
-    window.saveProfile = window.saveProfile;
     window.processCheckout = window.processCheckout;
     window.closePayment = window.closePayment;
-    window.previewProofPayment = window.previewProofPayment;
     window.sendOrder = window.sendOrder;
+    window.openAdmin = window.openAdmin;
     window.loginAdmin = window.loginAdmin;
     window.saveSettings = window.saveSettings;
     window.addProduct = window.addProduct;
     window.delProd = window.delProd;
+    window.loginGoogle = window.loginGoogle;
+    window.loginGuest = window.loginGuest;
+    window.openProductDetail = window.openProductDetail;
+    window.closeProductModal = window.closeProductModal;
+    window.openProfile = window.openProfile;
+    window.closeProfile = window.closeProfile;
+    window.saveProfile = window.saveProfile;
+    window.previewProofPayment = window.previewProofPayment;
 
   </script>
 </body>
