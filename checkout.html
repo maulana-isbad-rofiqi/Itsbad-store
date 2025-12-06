@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Merchant Payment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+    .qris-container { background-image: url('https://i.ibb.co/pL1T92q/qris-bg-pattern.png'); background-size: cover; }
+    /* Hide scrollbar */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+  </style>
+</head>
+<body class="flex justify-center min-h-screen text-slate-800">
+
+  <div class="w-full max-w-md bg-white shadow-2xl min-h-screen relative overflow-hidden flex flex-col">
+    
+    <div class="bg-blue-600 text-white p-5 pt-8 rounded-b-[2rem] shadow-lg z-10 relative">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Checkout</h1>
+          <p class="text-blue-100 text-sm opacity-90">Selesaikan pembayaran Anda</p>
+        </div>
+        <div class="bg-white/20 p-2 rounded-full backdrop-blur-sm">
+          <i class="fas fa-shield-alt text-xl"></i>
+        </div>
+      </div>
+      
+      <div class="bg-white text-slate-800 p-4 rounded-xl shadow-md flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+          <i class="fas fa-store"></i>
+        </div>
+        <div class="flex-1">
+          <p class="text-xs text-slate-500 font-semibold uppercase">Merchant</p>
+          <h2 id="storeNameDisplay" class="font-bold text-lg leading-tight">TOKO SAYA</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-5 pb-24 relative">
+      
+      <div id="setupPanel" class="mb-6 bg-yellow-50 border border-yellow-200 p-4 rounded-xl">
+        <h3 class="font-bold text-yellow-800 mb-2">⚙️ Setup Admin (Owner)</h3>
+        <p class="text-xs text-yellow-700 mb-3">Isi data ini dulu sebelum kasih HP ke pelanggan / share link.</p>
+        
+        <div class="space-y-3">
+          <input type="file" id="qrisFile" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+          <input type="text" id="storeNameInput" placeholder="Nama Toko" class="w-full p-2 border rounded text-sm">
+          <input type="text" id="waNumber" placeholder="Nomor WA (08xxxxx)" class="w-full p-2 border rounded text-sm">
+          <input type="number" id="nominalSet" placeholder="Nominal (Opsional, kosong = bebas)" class="w-full p-2 border rounded text-sm">
+          <button onclick="applyConfig()" class="w-full bg-slate-800 text-white py-2 rounded font-semibold text-sm">Simpan & Tampilkan QR</button>
+        </div>
+      </div>
+
+      <div id="paymentSection" class="hidden">
+        <div class="text-center mb-6">
+          <p class="text-slate-500 text-sm mb-1">Total Pembayaran</p>
+          <h2 id="amountDisplay" class="text-3xl font-bold text-slate-800">Rp 0</h2>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+          <div class="bg-red-600 text-white text-[10px] font-bold px-3 py-1 rounded-full mb-3">QRIS DINAMIS</div>
+          
+          <div id="qrContainer" class="p-2 border-2 border-dashed border-slate-300 rounded-lg">
+            <div class="w-48 h-48 bg-slate-100 flex items-center justify-center text-slate-400 text-xs text-center">
+              Upload QRIS Toko<br>di menu Setup
+            </div>
+          </div>
+          
+          <p class="text-xs text-center text-slate-400 mt-3">
+            Scan menggunakan GoPay, Dana, OVO, ShopeePay, BCA, dll.
+          </p>
+        </div>
+
+        <div class="mt-8">
+          <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <i class="far fa-check-circle text-green-500"></i> Konfirmasi Pembayaran
+          </h3>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-semibold text-slate-500 ml-1">Nama Pengirim</label>
+              <input type="text" id="custName" class="w-full p-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition shadow-sm" placeholder="Contoh: Budi Santoso">
+            </div>
+            <div>
+              <label class="text-xs font-semibold text-slate-500 ml-1">Catatan (Opsional)</label>
+              <textarea id="custNote" rows="2" class="w-full p-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 transition shadow-sm" placeholder="Contoh: Order Kaos Hitam XL"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <input type="hidden" id="rawQrString">
+
+    </div>
+
+    <div id="bottomBar" class="hidden p-4 bg-white border-t border-slate-100 absolute bottom-0 w-full z-20">
+      <button onclick="sendToWhatsapp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-200 transition transform active:scale-95 flex items-center justify-center gap-2">
+        <i class="fab fa-whatsapp text-xl"></i>
+        <span>Kirim Bukti Transaksi</span>
+      </button>
+      <p class="text-[10px] text-center text-slate-400 mt-2">
+        *Akan membuka WhatsApp untuk melampirkan foto
+      </p>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    // --- VARIABLES ---
+    let qrisData = "";
+    let merchantName = "TOKO SAYA";
+    let merchantWA = "";
+    let fixedAmount = 0;
+
+    // --- SETUP FUNCTIONS ---
+    function applyConfig() {
+      const name = document.getElementById('storeNameInput').value;
+      const wa = document.getElementById('waNumber').value;
+      const amount = document.getElementById('nominalSet').value;
+      const fileInput = document.getElementById('qrisFile');
+
+      if (!name || !wa || !fileInput.files[0]) {
+        alert("Mohon lengkapi Nama Toko, Nomor WA, dan Upload QRIS Asli.");
+        return;
+      }
+
+      merchantName = name;
+      merchantWA = formatWA(wa);
+      fixedAmount = amount ? parseInt(amount) : 0;
+
+      // Update UI
+      document.getElementById('storeNameDisplay').innerText = merchantName;
+      document.getElementById('amountDisplay').innerText = fixedAmount > 0 
+        ? "Rp " + fixedAmount.toLocaleString('id-ID') 
+        : "Input Manual";
+
+      // Process QR Image
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          const code = decodeQRFromImage(img);
+          if (code) {
+            qrisData = code;
+            generateDisplayQR(); // Generate QR baru (bisa dinamis)
+            
+            // Switch View
+            document.getElementById('setupPanel').style.display = 'none';
+            document.getElementById('paymentSection').classList.remove('hidden');
+            document.getElementById('bottomBar').classList.remove('hidden');
+          } else {
+            alert("QRIS tidak terbaca. Pastikan gambar jelas.");
+          }
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function formatWA(num) {
+      let n = num.replace(/\D/g, '');
+      if(n.startsWith('0')) n = '62' + n.substring(1);
+      return n;
+    }
+
+    // --- QR LOGIC (Sama seperti sebelumnya tapi disederhanakan) ---
+    function decodeQRFromImage(img) {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, canvas.width, canvas.height);
+      return code ? code.data : null;
+    }
+
+    function generateDisplayQR() {
+      let finalString = qrisData;
+      
+      // Jika ada nominal di-set, inject nominal agar jadi dinamis
+      if (fixedAmount > 0) {
+        try {
+          finalString = createDynamicQRIS(qrisData, fixedAmount);
+        } catch (e) {
+          console.error("Gagal convert dinamis", e);
+        }
+      }
+
+      const container = document.getElementById('qrContainer');
+      container.innerHTML = "";
+      new QRCode(container, {
+        text: finalString,
+        width: 200,
+        height: 200,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.M
+      });
+    }
+
+    // CRC16 Logic untuk Inject Nominal
+    function createDynamicQRIS(payload, amount) {
+        // Simple logic reuse
+        let tlv = parseTLV(payload);
+        tlv = tlv.filter(x => x.id !== '63');
+        const idx01 = tlv.findIndex(x => x.id === '01');
+        if (idx01 >= 0) tlv[idx01].val = '12';
+        
+        const amountStr = parseFloat(amount).toFixed(2);
+        const tag54 = { id: '54', val: amountStr };
+        const idx54 = tlv.findIndex(x => x.id === '54');
+        const idx53 = tlv.findIndex(x => x.id === '53');
+
+        if (idx54 >= 0) tlv[idx54] = tag54;
+        else if (idx53 >= 0) tlv.splice(idx53 + 1, 0, tag54);
+        else tlv.push(tag54);
+
+        let body = tlv.map(item => item.id + item.val.length.toString().padStart(2, '0') + item.val).join('');
+        const crc = crc16ccitt(body + "6304");
+        return body + "6304" + crc;
+    }
+
+    function parseTLV(payload) {
+      const items = [];
+      let pos = 0;
+      while (pos < payload.length) {
+        const id = payload.substr(pos, 2);
+        const len = parseInt(payload.substr(pos + 2, 2), 10);
+        if (isNaN(len)) break;
+        const val = payload.substr(pos + 4, len);
+        items.push({ id, val });
+        pos += 4 + len;
+      }
+      return items;
+    }
+
+    function crc16ccitt(data) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < data.length; i++) {
+        crc ^= data.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+            crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+            crc = crc & 0xFFFF;
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, "0");
+    }
+
+    // --- WHATSAPP ACTION ---
+    function sendToWhatsapp() {
+      const name = document.getElementById('custName').value;
+      const note = document.getElementById('custNote').value;
+      
+      if (!name) {
+        alert("Harap isi Nama Pengirim!");
+        return;
+      }
+
+      const total = fixedAmount > 0 ? "Rp " + fixedAmount.toLocaleString('id-ID') : "Sesuai Nominal";
+      
+      // Template Pesan yang Keren
+      let text = `*KONFIRMASI PEMBAYARAN*\n`;
+      text += `──────────────────\n`;
+      text += `👤 Nama: *${name}*\n`;
+      text += `💰 Total: *${total}*\n`;
+      text += `📝 Catatan: ${note || '-'}\n`;
+      text += `──────────────────\n`;
+      text += `Mohon dicek kak, bukti transfer (foto) saya lampirkan dibawah ini 👇`;
+
+      const url = `https://wa.me/${merchantWA}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
