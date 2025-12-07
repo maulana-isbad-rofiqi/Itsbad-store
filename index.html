@@ -370,9 +370,7 @@
 
     window.initPayment=()=>{
         if(!cart.length)return; 
-        let note = document.getElementById('orderNote').value.trim();
-        if(!note) note = "-";
-
+        let note = document.getElementById('orderNote').value.trim(); if(!note) note = "-";
         const sub=cart.reduce((a,b)=>a+(b.price*b.qty),0); const tot=sub+(parseInt(storeData.fee)||0);
         document.getElementById('payAmountDisplay').innerText="Rp "+tot.toLocaleString('id-ID');
         const qc=document.getElementById('qrContainer'); const qs=document.getElementById('qrStatus'); const raw=storeData.qris||"";
@@ -383,10 +381,7 @@
             setTimeout(()=>{
                 try {
                     let final=raw; let txt="Scan Manual"; let cls="text-orange-600 bg-orange-50";
-                    if(raw.length>20){ 
-                        final=formatQrisAmount(raw, tot); 
-                        txt="Nominal Otomatis"; cls="text-green-600 bg-green-50"; 
-                    }
+                    if(raw.length>20){ final=formatQrisAmount(raw, tot); txt="Nominal Otomatis"; cls="text-green-600 bg-green-50"; }
                     qc.innerHTML=""; new QRCode(qc,{text:final,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
                     qs.innerHTML=txt; qs.className=`text-[10px] ${cls} py-1 rounded mt-2`;
                 } catch(e){qc.innerHTML='<p class="text-xs text-red-500">Error QR</p>';}
@@ -396,9 +391,7 @@
     };
 
     window.generateReceipt=async()=>{
-        let note=document.getElementById('orderNote').value.trim();
-        if(!note) note = "-";
-        
+        let note=document.getElementById('orderNote').value.trim(); if(!note) note = "-";
         const sub=cart.reduce((a,b)=>a+(b.price*b.qty),0); const fee=parseInt(storeData.fee)||0; const tot=sub+fee;
         document.getElementById('recStoreName').innerText=storeData.name; document.getElementById('receiptDate').innerText=new Date().toLocaleDateString('id-ID'); document.getElementById('receiptName').innerText=userProfile.name||"Tamu"; document.getElementById('receiptTotal').innerText="Rp "+tot.toLocaleString('id-ID');
         const ri=document.getElementById('receiptItems'); ri.innerHTML="";
@@ -414,7 +407,6 @@
     window.renderAdmList=()=>{const l=document.getElementById('admList');l.innerHTML="";storeData.products.forEach((p,i)=>{l.innerHTML+=`<div class="flex justify-between items-center bg-white p-3 text-xs border rounded-lg mb-2"><div class="flex-1"><b>${p.name}</b><br>Stok: ${p.stock}</div><div><button onclick="editAdm(${i})" class="text-blue-500 mr-2"><i class="fas fa-edit"></i></button><button onclick="delAdm(${i})" class="text-red-500"><i class="fas fa-trash"></i></button></div></div>`;});};
     window.handleQrisUpload=(input)=>{const f=input.files[0];if(f){const r=new FileReader();r.onload=(e)=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=i.width;c.height=i.height;c.getContext('2d').drawImage(i,0,0);try{const code=jsQR(c.getContext('2d').getImageData(0,0,c.width,c.height).data,c.width,c.height);if(code)document.getElementById('admQris').value=code.data;}catch(e){}};i.src=e.target.result;};r.readAsDataURL(f);}};
     
-    // EXPORTS & WHATSAPP STRUK UPDATE
     Object.assign(window,{
         openDetail:(i)=>{currentDetailIdx=i;const p=storeData.products[i];document.getElementById('detailImg').src=p.image;document.getElementById('detailName').innerText=p.name;document.getElementById('detailPrice').innerText="Rp "+parseInt(p.price).toLocaleString();document.getElementById('detailStock').innerText="Stok: "+p.stock;document.getElementById('detailDesc').innerText=p.desc;document.getElementById('detailCat').innerText=p.category;const b=document.getElementById('btnAddToCart');if(parseInt(p.stock)>0){b.disabled=false;b.innerHTML="TAMBAH";b.classList.remove('bg-slate-300');b.classList.add('bg-slate-900');}else{b.disabled=true;b.innerHTML="HABIS";b.classList.remove('bg-slate-900');b.classList.add('bg-slate-300');}document.getElementById('detailModal').classList.remove('hidden');},
         closeDetail:()=>{document.getElementById('detailModal').classList.add('hidden');},
@@ -423,45 +415,43 @@
         openCart:()=>{switchTab('cart');renderCartList();document.getElementById('cartModal').classList.remove('hidden');},
         closeCart:()=>{document.getElementById('cartModal').classList.add('hidden');switchTab('home');},
         closePayment:()=>{document.getElementById('paymentModal').classList.add('hidden');},
-        
-        // --- UPDATED WHATSAPP RECEIPT ---
+
+        // --- CUSTOM WHATSAPP FORMAT ---
         sendToWhatsapp:()=>{
-            const note = document.getElementById('orderNote').value.trim() || "-";
-            const subtotal = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-            const fee = parseInt(storeData.fee) || 0;
-            const total = subtotal + fee;
+            const n=document.getElementById('orderNote').value.trim()||"-";
+            const sub=cart.reduce((a,b)=>a+(b.price*b.qty),0);
+            const fee=parseInt(storeData.fee)||0;
+            const t=sub+fee;
+            
+            // Format Waktu manual untuk 05.24 WIB
             const now = new Date();
-            const dateStr = now.toLocaleDateString('id-ID');
-            // Format waktu dengan titik (02.08.11)
-            const timeStr = now.toLocaleTimeString('id-ID', { hour12: false }).replace(/:/g, '.');
+            const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+            const timeStr = `${String(now.getHours()).padStart(2,'0')}.${String(now.getMinutes()).padStart(2,'0')} WIB`;
 
-            let msg = `*STRUK PEMESANAN - ${storeData.name}*\n`;
-            msg += `============================\n`;
-            msg += `👤 *Pembeli:* ${userProfile.name || 'Tamu'}\n`;
-            msg += `📅 *Tanggal:* ${dateStr}\n`;
-            msg += `⏰ *Waktu:* ${timeStr}\n`;
-            msg += `============================\n`;
+            let m=`*𝙎𝙏𝙍𝙐𝙆 𝙋𝙀𝙈𝙀𝙎𝘼𝙉𝘼𝙉 - ${storeData.name}*\n`;
+            m+=`============================\n`;
+            m+=`👤 𝐏𝐞𝐦𝐛𝐞𝐥𝐢 : ${userProfile.name||'Tamu'}\n`;
+            m+=`📅 𝐓𝐚𝐧𝐠𝐠𝐚𝐥 : ${dateStr}\n`;
+            m+=`⏰ 𝐖𝐚𝐤𝐭𝐮 : ${timeStr}\n`;
+            m+=`============================\n`;
+            cart.forEach(i=>m+=`🛒 ${i.name} (x${i.qty}) : Rp. ${(i.price*i.qty).toLocaleString('id-ID')}\n`);
+            m+=`============================\n`;
+            m+=`💼 𝐁𝐢𝐚𝐲𝐚 𝐀𝐝𝐦𝐢𝐧 : Rp ${fee.toLocaleString('id-ID')}\n`;
+            m+=`💰 𝐒𝐮𝐛𝐭𝐨𝐭𝐚𝐥 : Rp ${sub.toLocaleString('id-ID')}\n`;
+            m+=`💵 𝐓𝐎𝐓𝐀𝐋 : Rp ${t.toLocaleString('id-ID')}\n`;
+            m+=`============================\n`;
+            m+=`📝 𝐂𝐚𝐭𝐚𝐭𝐚𝐧 : ${n}\n`;
+            m+=`💳 𝐌𝐞𝐭𝐨𝐝𝐞 : 𝐐𝐑𝐈𝐒\n`;
+            m+=`✅ 𝐒𝐭𝐚𝐭𝐮𝐬 : 𝐋𝐔𝐍𝐀𝐒\n`;
+            m+=`============================\n`;
+            m+=`🙏: ᴛᴇʀɪᴍᴀ ᴋᴀꜱɪʜ ᴛᴇʟᴀʜ ʙᴇʀʙᴇʟᴀɴᴊᴀ!\n`;
+            m+=`⏳ : ᴛᴜɴɢɢᴜ ᴀᴅᴍɪɴ ꜱᴇɢᴇʀᴀ ᴍᴇᴍᴘʀᴏꜱᴇꜱ!\n\n`;
+            m+=`⚠️_𝙺𝚒𝚛𝚒𝚖 𝙱𝚞𝚔𝚝𝚒 𝙿𝚎𝚖𝚋𝚊𝚢𝚊𝚛𝚊𝚗_⚠️`;
 
-            cart.forEach(i => {
-                msg += `➡️ ${i.name} (${i.qty}) : Rp ${(i.price * i.qty).toLocaleString('id-ID')}\n`;
-            });
-
-            msg += `============================\n`;
-            if (fee > 0) msg += `💼 *Biaya Admin:* Rp ${fee.toLocaleString('id-ID')}\n`;
-            msg += `💰 *Subtotal:* Rp ${subtotal.toLocaleString('id-ID')}\n`;
-            msg += `💵 *TOTAL:* Rp ${total.toLocaleString('id-ID')}\n`;
-            msg += `============================\n`;
-            msg += `📝 *Catatan:* ${note}\n`;
-            msg += `💳 *Metode:* QRIS\n`;
-            msg += `✅ *Status:* LUNAS\n`;
-            msg += `============================\n`;
-            msg += `Terima kasih telah berbelanja!\n`;
-            msg += `Tunggu admin segera memproses!`;
-
-            window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(msg)}`, '_blank');
-            setTimeout(() => { cart = []; saveCart(); location.reload(); }, 1500);
+            window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(m)}`,'_blank');
+            setTimeout(()=>{cart=[];saveCart();location.reload();},1500);
         },
-        // --------------------------------
+        // ------------------------------
 
         closeReceipt:()=>{cart=[];saveCart();location.reload();},
         openAdminLogin:()=>{if(!user||user.email?.toLowerCase()!==ADMIN_EMAIL.toLowerCase()){toastr.error("Akses Ditolak");return;}document.getElementById('adminLoginModal').classList.remove('hidden');},
