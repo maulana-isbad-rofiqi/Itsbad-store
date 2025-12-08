@@ -347,13 +347,28 @@
     };
     window.filterCat=(c)=>{activeCategory=c;renderCategories();renderProducts();};
     window.filterProducts=()=>{renderProducts(document.getElementById('searchInput').value.toLowerCase());};
+    
+    // --- RENDER PRODUCTS DENGAN TOMBOL SHARE ---
     window.renderProducts=(q="")=>{
         const g=document.getElementById('productGrid'); g.innerHTML="";
         let f=storeData.products; if(activeCategory!=='all')f=f.filter(p=>(p.category||'Umum')===activeCategory); if(q)f=f.filter(p=>p.name.toLowerCase().includes(q));
         if(!f.length){g.innerHTML='<div class="col-span-2 text-center py-10 text-slate-400 text-xs">Kosong</div>';return;}
         f.forEach(p=>{
             const idx=storeData.products.indexOf(p); const img=p.image||`https://placehold.co/200x200/e2e8f0/94a3b8?text=${p.name[0]}`;
-            g.innerHTML+=`<div class="card-product bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col relative overflow-hidden" onclick="openDetail(${idx})">${parseInt(p.stock)<=0?'<div class="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-bold text-red-500 text-xs backdrop-blur-sm">HABIS</div>':''}<div class="aspect-square rounded-xl bg-slate-50 mb-3 overflow-hidden"><img src="${img}" class="w-full h-full object-cover"></div><div class="mb-1"><span class="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">${p.category||'Umum'}</span></div><h3 class="font-bold text-xs text-slate-800 line-clamp-2 leading-tight mb-1 min-h-[2rem]">${p.name}</h3><div class="mt-auto flex justify-between items-center"><span class="font-bold text-blue-600 text-xs">Rp ${parseInt(p.price).toLocaleString('id-ID')}</span><button class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px]"><i class="fas fa-arrow-right"></i></button></div></div>`;
+            g.innerHTML+=`
+            <div class="card-product bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col relative overflow-hidden" onclick="openDetail(${idx})">
+                ${parseInt(p.stock)<=0?'<div class="absolute inset-0 bg-white/70 z-10 flex items-center justify-center font-bold text-red-500 text-xs backdrop-blur-sm">HABIS</div>':''}
+                <div class="aspect-square rounded-xl bg-slate-50 mb-3 overflow-hidden"><img src="${img}" class="w-full h-full object-cover"></div>
+                <div class="mb-1"><span class="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">${p.category||'Umum'}</span></div>
+                <h3 class="font-bold text-xs text-slate-800 line-clamp-2 leading-tight mb-1 min-h-[2rem]">${p.name}</h3>
+                <div class="mt-auto flex justify-between items-center">
+                    <span class="font-bold text-blue-600 text-xs">Rp ${parseInt(p.price).toLocaleString('id-ID')}</span>
+                    <div class="flex items-center gap-1.5 z-20">
+                         <button onclick="event.stopPropagation(); shareProduct(${idx})" class="w-7 h-7 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs hover:bg-blue-100 transition-colors"><i class="fas fa-share-alt"></i></button>
+                         <button class="w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px]"><i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            </div>`;
         });
     };
     
@@ -416,6 +431,19 @@
         closeCart:()=>{document.getElementById('cartModal').classList.add('hidden');switchTab('home');},
         closePayment:()=>{document.getElementById('paymentModal').classList.add('hidden');},
 
+        // --- FUNGSI SHARE ---
+        shareProduct:(i)=>{
+            const p=storeData.products[i];
+            const url=window.location.href;
+            const text=`*${p.name}*\nHarga: Rp ${parseInt(p.price).toLocaleString('id-ID')}\nStok: ${p.stock}\n${p.desc?p.desc.substring(0,50)+'...':''}\n\nLink: ${url}`;
+            if(navigator.share){
+                navigator.share({title:p.name,text:text,url:url}).catch(console.error);
+            }else{
+                navigator.clipboard.writeText(text);
+                toastr.success("Info produk disalin!");
+            }
+        },
+
         // --- CUSTOM WHATSAPP FORMAT ---
         sendToWhatsapp:()=>{
             const n=document.getElementById('orderNote').value.trim()||"-";
@@ -423,7 +451,6 @@
             const fee=parseInt(storeData.fee)||0;
             const t=sub+fee;
             
-            // Format Waktu manual untuk 05.24 WIB
             const now = new Date();
             const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
             const timeStr = `${String(now.getHours()).padStart(2,'0')}.${String(now.getMinutes()).padStart(2,'0')} WIB`;
@@ -451,8 +478,7 @@
             window.open(`https://wa.me/${OWNER_WA}?text=${encodeURIComponent(m)}`,'_blank');
             setTimeout(()=>{cart=[];saveCart();location.reload();},1500);
         },
-        // ------------------------------
-
+        
         closeReceipt:()=>{cart=[];saveCart();location.reload();},
         openAdminLogin:()=>{if(!user||user.email?.toLowerCase()!==ADMIN_EMAIL.toLowerCase()){toastr.error("Akses Ditolak");return;}document.getElementById('adminLoginModal').classList.remove('hidden');},
         closeAdminLogin:()=>{document.getElementById('adminLoginModal').classList.add('hidden');},
