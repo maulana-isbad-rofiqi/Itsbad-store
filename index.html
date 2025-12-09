@@ -355,16 +355,15 @@
     window.filterCat=(c)=>{activeCategory=c;renderCategories();renderProducts();};
     window.filterProducts=()=>{renderProducts(document.getElementById('searchInput').value.toLowerCase());};
     
-    // --- RENDER PRODUCTS UPDATED (Stok & Terjual) ---
+    // --- RENDER PRODUCTS UPDATED (Stok Luar & Bintang 5) ---
     window.renderProducts=(q="")=>{
         const g=document.getElementById('productGrid'); g.innerHTML="";
         let f=storeData.products; if(activeCategory!=='all')f=f.filter(p=>(p.category||'Umum')===activeCategory); if(q)f=f.filter(p=>p.name.toLowerCase().includes(q));
         if(!f.length){g.innerHTML='<div class="col-span-2 text-center py-10 text-slate-400 text-xs">Kosong</div>';return;}
         f.forEach(p=>{
             const idx=storeData.products.indexOf(p); const img=p.image||`https://placehold.co/200x200/e2e8f0/94a3b8?text=${p.name[0]}`;
-            // Logic Stok Habis: Hapus Blur Overlay, tapi tambah badge "HABIS" kecil
             const isHabis = parseInt(p.stock) <= 0;
-            const soldCount = p.sold || 0; // Data Terjual
+            const soldCount = p.sold || 0;
 
             g.innerHTML+=`
             <div class="card-product bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col relative overflow-hidden" onclick="openDetail(${idx})">
@@ -375,8 +374,15 @@
                 </div>
                 
                 <div class="mb-1 flex justify-between items-center">
-                    <span class="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">${p.category||'Umum'}</span>
-                    <span class="text-[9px] text-slate-400 flex items-center gap-1"><i class="fas fa-star text-yellow-400 text-[8px]"></i> ${soldCount} Terjual</span>
+                    <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${p.category||'Umum'}</span>
+                    <span class="text-[9px] ${isHabis?'text-red-500 font-bold':'text-slate-500'}">Stok: ${p.stock}</span>
+                </div>
+
+                <div class="mb-1 flex items-center gap-1">
+                     <div class="flex text-yellow-400 text-[8px] gap-0.5">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                     </div>
+                     <span class="text-[9px] text-slate-400 ml-0.5">${soldCount} Terjual</span>
                 </div>
                 
                 <h3 class="font-bold text-xs text-slate-800 line-clamp-2 leading-tight mb-1 min-h-[2rem]">${p.name}</h3>
@@ -573,8 +579,6 @@
         openAdminLogin:()=>{if(!user||user.email?.toLowerCase()!==ADMIN_EMAIL.toLowerCase()){toastr.error("Akses Ditolak");return;}document.getElementById('adminLoginModal').classList.remove('hidden');},
         closeAdminLogin:()=>{document.getElementById('adminLoginModal').classList.add('hidden');},
         closeAdminPanel:()=>{document.getElementById('adminModal').classList.add('hidden');},
-        
-        // --- ADMIN UPDATE: Isi Form Input ---
         editAdm:(i)=>{
             const p=storeData.products[i];
             document.getElementById('admPName').value=p.name;
@@ -592,7 +596,6 @@
         },
         delAdm:async(i)=>{if(confirm('Hapus?')){storeData.products.splice(i,1);await update(ref(db,`stores/${STORE_ID}`),storeData);renderAdmList();renderProducts();}},
         
-        // --- ADMIN UPDATE: Simpan data Terjual ---
         saveAdmProd:async()=>{
             const i=parseInt(document.getElementById('admEditIdx').value);
             const p={
