@@ -89,6 +89,10 @@
         <div class="flex items-center gap-2">
             <button onclick="toggleSearch()" class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100"><i class="fas fa-search"></i></button>
             
+            <a href="https://cek-nomer-xl.vercel.app/" target="_blank" class="w-9 h-9 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center hover:bg-yellow-100 transition-colors" title="Cek Nomer XL/Axis">
+                <i class="fas fa-sim-card"></i>
+            </a>
+
             <button onclick="openDownloadPage()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-2">
                 <i class="fas fa-cloud-download-alt"></i> Download App
             </button>
@@ -131,11 +135,6 @@
 
     <div class="bottom-nav">
         <button onclick="switchTab('home')" class="nav-item active" id="nav-home"><i class="fas fa-home"></i> Beranda</button>
-        
-        <a href="https://cek-nomer-xl.vercel.app/" target="_blank" class="nav-item">
-            <i class="fas fa-sim-card"></i> Cek Nomer
-        </a>
-
         <button onclick="openCart()" class="nav-item relative" id="nav-cart"><i class="fas fa-shopping-bag"></i><span id="cartBadge" class="absolute top-0 right-6 w-4 h-4 bg-red-500 text-white text-[9px] flex items-center justify-center rounded-full border-2 border-white hidden">0</span> Keranjang</button>
         <button onclick="openProfile()" class="nav-item" id="nav-profile"><i class="fas fa-user"></i> Akun</button>
         <button id="nav-admin" onclick="openAdminLogin()" class="nav-item hidden"><i class="fas fa-cog"></i> Admin</button>
