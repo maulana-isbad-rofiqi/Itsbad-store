@@ -89,8 +89,8 @@
         <div class="flex items-center gap-2">
             <button onclick="toggleSearch()" class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100"><i class="fas fa-search"></i></button>
             
-            <button onclick="openDownloadPage()" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors">
-                <i class="fas fa-cloud-download-alt"></i>
+            <button onclick="openDownloadPage()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-2">
+                <i class="fas fa-cloud-download-alt"></i> Download App
             </button>
         </div>
     </div>
@@ -121,6 +121,9 @@
             <h2 class="text-xl font-bold text-slate-800">Aplikasi Gratis</h2>
             <p class="text-xs text-slate-500">Download aplikasi pilihan kami.</p>
         </div>
+        
+        <div id="appCategoryContainer" class="flex gap-2 overflow-x-auto no-scrollbar mb-6 pb-2"></div>
+
         <div id="appList" class="space-y-3">
             <div class="text-center py-10 text-slate-400 text-xs">Belum ada aplikasi</div>
         </div>
@@ -286,6 +289,7 @@
                         
                         <div class="flex-1 space-y-2">
                             <input id="admAppName" class="w-full border p-2 rounded text-xs" placeholder="Nama Aplikasi">
+                            <input id="admAppCat" class="w-full border bg-yellow-50 p-2 rounded text-xs font-bold" placeholder="Kategori App (Misal: Game, Tools)">
                             <input id="admAppLink" class="w-full border bg-green-50 p-2 rounded text-xs font-mono text-green-700" placeholder="Link Download (GDrive/Mediafire)">
                         </div>
                     </div>
@@ -323,7 +327,7 @@
       appId: "1:1052259146588:web:a3f4e9c31982cbfa2dff99"
     };
     const STORE_ID="itsbad-store", OWNER_WA="6285236363128", ADMIN_PIN="110603", ADMIN_EMAIL="isbadd84@gmail.com";
-    let db, auth, user, storeData={name:"Itsbad Store",fee:0,products:[],downloads:[]}, cart=JSON.parse(localStorage.getItem('cart'))||[], userProfile={}, tempAdmImg="", tempAdmAppImg="", currentDetailIdx=-1, activeCategory='all', isGuestMode=false;
+    let db, auth, user, storeData={name:"Itsbad Store",fee:0,products:[],downloads:[]}, cart=JSON.parse(localStorage.getItem('cart'))||[], userProfile={}, tempAdmImg="", tempAdmAppImg="", currentDetailIdx=-1, activeCategory='all', activeAppCategory='all', isGuestMode=false;
     toastr.options={"positionClass":"toast-top-center","timeOut":"2000","showMethod":"slideDown","hideMethod":"slideUp","closeButton":false,"progressBar":true};
 
     // --- QRIS UTILITY ---
@@ -405,6 +409,7 @@
             document.getElementById('shopNameDisplay').innerText=storeData.name; 
             renderCategories(); 
             renderProducts(); 
+            renderAppCategories(); // Render App Categories
             renderDownloadPage(); // Render Apps
             updateCartBadge(); 
         } catch(e){}
@@ -463,17 +468,47 @@
         });
     };
 
+    // --- RENDER APP CATEGORIES ---
+    window.renderAppCategories = () => {
+        const cats = ['all'];
+        if(storeData.downloads) {
+            storeData.downloads.forEach(a => {
+                const c = a.category || 'Umum';
+                if(!cats.includes(c)) cats.push(c);
+            });
+        }
+        
+        const c = document.getElementById('appCategoryContainer'); 
+        c.innerHTML = "";
+        cats.forEach(k => { 
+            c.innerHTML += `<button onclick="filterAppCat('${k}')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-medium shadow-sm ${k===activeAppCategory?'bg-blue-600 text-white':'bg-white border border-slate-200 text-slate-600'} hover:bg-blue-500 hover:text-white transition-colors">${k==='all'?'Semua':k}</button>`; 
+        });
+    }
+
+    window.filterAppCat = (c) => {
+        activeAppCategory = c;
+        renderAppCategories();
+        renderDownloadPage();
+    }
+
     // --- RENDER DOWNLOAD PAGE ---
     window.renderDownloadPage = () => {
         const list = document.getElementById('appList');
         list.innerHTML = "";
         
-        if (!storeData.downloads || storeData.downloads.length === 0) {
-            list.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Belum ada aplikasi</div>';
+        let apps = storeData.downloads || [];
+        
+        // Filter Logic
+        if(activeAppCategory !== 'all') {
+            apps = apps.filter(a => (a.category || 'Umum') === activeAppCategory);
+        }
+
+        if (apps.length === 0) {
+            list.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Belum ada aplikasi di kategori ini</div>';
             return;
         }
 
-        storeData.downloads.forEach(app => {
+        apps.forEach(app => {
             const img = app.icon || `https://placehold.co/100x100/e2e8f0/94a3b8?text=${app.name[0]}`;
             list.innerHTML += `
             <div class="app-item flex items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
@@ -481,7 +516,10 @@
                     <img src="${img}" class="w-full h-full object-cover">
                 </div>
                 <div class="flex-1 mr-2 overflow-hidden">
-                    <h3 class="font-bold text-sm text-slate-800 truncate">${app.name}</h3>
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <h3 class="font-bold text-sm text-slate-800 truncate">${app.name}</h3>
+                        <span class="text-[9px] bg-blue-50 text-blue-600 px-1.5 rounded">${app.category || 'Umum'}</span>
+                    </div>
                     <p class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">${app.desc || "Tidak ada deskripsi"}</p>
                 </div>
                 <a href="${app.link}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex flex-col items-center">
@@ -611,7 +649,9 @@
                 <div class="flex items-center gap-2 flex-1 overflow-hidden">
                     <img src="${app.icon || 'https://placehold.co/50'}" class="w-8 h-8 rounded bg-slate-100 object-cover">
                     <div class="truncate">
-                        <b class="text-slate-800">${app.name}</b><br>
+                        <b class="text-slate-800">${app.name}</b>
+                        <span class="text-xs text-blue-500 ml-1">(${app.category || 'Umum'})</span>
+                        <br>
                         <span class="text-slate-400 text-[10px] truncate block">${app.link}</span>
                     </div>
                 </div>
@@ -667,6 +707,7 @@
             // Reset Tabs
             document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
             renderDownloadPage();
+            renderAppCategories();
         },
 
         moveProd: async (i, dir) => {
@@ -782,12 +823,13 @@
             const a={
                 name:document.getElementById('admAppName').value,
                 link:document.getElementById('admAppLink').value,
+                category:document.getElementById('admAppCat').value, // Save Kategori
                 desc:document.getElementById('admAppDesc').value,
                 icon:tempAdmAppImg||(i>-1?storeData.downloads[i].icon:"")
             };
             if(i>-1) storeData.downloads[i]=a; else storeData.downloads.push(a);
             await update(ref(db,`stores/${STORE_ID}`),storeData);
-            resetAdmAppForm(); renderAdmAppList(); renderDownloadPage();
+            resetAdmAppForm(); renderAdmAppList(); renderDownloadPage(); renderAppCategories();
             toastr.success("Aplikasi Disimpan");
         },
 
@@ -795,6 +837,7 @@
             const a = storeData.downloads[i];
             document.getElementById('admAppName').value = a.name;
             document.getElementById('admAppLink').value = a.link;
+            document.getElementById('admAppCat').value = a.category || ""; // Edit Kategori
             document.getElementById('admAppDesc').value = a.desc;
             document.getElementById('admAppEditIdx').value = i;
             if(a.icon){
@@ -808,13 +851,14 @@
             if(confirm('Hapus Aplikasi ini?')){
                 storeData.downloads.splice(i,1);
                 await update(ref(db,`stores/${STORE_ID}`),storeData);
-                renderAdmAppList(); renderDownloadPage();
+                renderAdmAppList(); renderDownloadPage(); renderAppCategories();
             }
         },
 
         resetAdmAppForm:()=>{
             document.getElementById('admAppName').value = "";
             document.getElementById('admAppLink').value = "";
+            document.getElementById('admAppCat').value = "";
             document.getElementById('admAppDesc').value = "";
             document.getElementById('admAppEditIdx').value = "-1";
             tempAdmAppImg = "";
