@@ -35,6 +35,11 @@
     .login-option { transition: all 0.2s ease; border: 1px solid #e2e8f0; }
     .login-option:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     .guest-warning { animation: pulse 2s infinite; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; }
+    
+    /* Style untuk Aplikasi */
+    .app-item { transition: all 0.2s; }
+    .app-item:active { transform: scale(0.98); background-color: #f1f5f9; }
+    
     @keyframes pulse { 0% { opacity: 0.9; } 50% { opacity: 1; } 100% { opacity: 0.9; } }
   </style>
 </head>
@@ -82,8 +87,11 @@
              <div><h1 class="text-sm font-bold text-slate-800 leading-none" id="shopNameDisplay">Itsbad Store</h1><p class="text-[10px] text-slate-400 mt-1" id="headerGreeting">Loading...</p></div>
         </div>
         <div class="flex items-center gap-2">
-            <button id="adminHeaderBtn" onclick="openAdminLogin()" class="hidden w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors"><i class="fas fa-cog text-sm"></i></button>
             <button onclick="toggleSearch()" class="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100"><i class="fas fa-search"></i></button>
+            
+            <button onclick="openDownloadPage()" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors">
+                <i class="fas fa-cloud-download-alt"></i>
+            </button>
         </div>
     </div>
 
@@ -91,7 +99,7 @@
         <input type="text" id="searchInput" onkeyup="filterProducts()" placeholder="Cari layanan..." class="w-full bg-slate-100 px-4 py-2 rounded-xl text-sm focus:outline-none">
     </div>
 
-    <div class="p-5 min-h-[80vh]">
+    <div id="homePage" class="p-5 min-h-[80vh]">
         <div class="w-full h-36 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-5 flex flex-col justify-center shadow-lg shadow-blue-200 mb-6 relative overflow-hidden">
              <div class="absolute -right-5 -top-5 w-24 h-24 bg-white/20 rounded-full blur-xl"></div>
              <h2 class="text-xl font-bold relative z-10">Premium Digital</h2>
@@ -106,6 +114,16 @@
 
         <div id="categoryContainer" class="flex gap-2 overflow-x-auto no-scrollbar mb-6 pb-2"></div>
         <div id="productGrid" class="grid grid-cols-2 gap-3 pb-20"><div class="col-span-2 text-center py-10 text-slate-400 text-xs">Memuat Produk...</div></div>
+    </div>
+
+    <div id="downloadPage" class="hidden p-5 min-h-[80vh] pb-24">
+        <div class="mb-5">
+            <h2 class="text-xl font-bold text-slate-800">Aplikasi Gratis</h2>
+            <p class="text-xs text-slate-500">Download aplikasi pilihan kami.</p>
+        </div>
+        <div id="appList" class="space-y-3">
+            <div class="text-center py-10 text-slate-400 text-xs">Belum ada aplikasi</div>
+        </div>
     </div>
 
     <div class="bottom-nav">
@@ -220,17 +238,26 @@
     </div>
 
     <div id="adminModal" class="fixed inset-0 z-[90] hidden bg-slate-100 overflow-y-auto">
-        <div class="sticky top-0 bg-white p-4 shadow-sm flex justify-between items-center"><h2 class="font-bold">Admin Panel</h2><button onclick="closeAdminPanel()" class="text-red-500 text-xs font-bold hover:text-red-600">Tutup</button></div>
+        <div class="sticky top-0 bg-white p-4 shadow-sm flex justify-between items-center z-50">
+            <h2 class="font-bold">Admin Panel</h2>
+            <div class="flex gap-2">
+                <button onclick="switchAdminTab('products')" id="tabAdmProd" class="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg transition">Produk</button>
+                <button onclick="switchAdminTab('apps')" id="tabAdmApp" class="px-3 py-1 bg-slate-200 text-slate-600 text-xs rounded-lg transition">Aplikasi</button>
+                <button onclick="closeAdminPanel()" class="text-red-500 text-xs font-bold hover:text-red-600 ml-2">Tutup</button>
+            </div>
+        </div>
+
         <div class="p-5" id="adminContent">
-            <div id="adminDash" class="space-y-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm">
-                     <h3 class="text-xs font-bold text-slate-400 mb-2 uppercase">Pengaturan Toko</h3>
-                     <input id="admStoreName" class="w-full border p-2 rounded mb-2 text-xs" placeholder="Nama Toko">
-                     <input id="admFee" type="number" class="w-full border p-2 rounded mb-2 text-xs" placeholder="Fee Admin">
-                     <div class="bg-blue-50 border border-blue-100 p-2 rounded mb-2"><p class="text-[10px] font-bold text-blue-600 mb-1">Upload QRIS</p><input type="file" id="qrisFileInp" class="w-full text-xs" onchange="handleQrisUpload(this)"></div>
-                     <input id="admQris" class="w-full border p-2 rounded mb-2 text-xs bg-slate-50" placeholder="String QRIS" readonly>
-                     <button onclick="saveAdmSettings()" class="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold">Simpan Config</button>
-                </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+                 <h3 class="text-xs font-bold text-slate-400 mb-2 uppercase">Pengaturan Toko</h3>
+                 <input id="admStoreName" class="w-full border p-2 rounded mb-2 text-xs" placeholder="Nama Toko">
+                 <input id="admFee" type="number" class="w-full border p-2 rounded mb-2 text-xs" placeholder="Fee Admin">
+                 <div class="bg-blue-50 border border-blue-100 p-2 rounded mb-2"><p class="text-[10px] font-bold text-blue-600 mb-1">Upload QRIS</p><input type="file" id="qrisFileInp" class="w-full text-xs" onchange="handleQrisUpload(this)"></div>
+                 <input id="admQris" class="w-full border p-2 rounded mb-2 text-xs bg-slate-50" placeholder="String QRIS" readonly>
+                 <button onclick="saveAdmSettings()" class="w-full bg-blue-600 text-white py-2 rounded text-xs font-bold">Simpan Config</button>
+            </div>
+
+            <div id="adminPanelProducts" class="space-y-6">
                 <div class="bg-white p-4 rounded-xl shadow-sm">
                     <h3 class="text-xs font-bold text-slate-400 mb-2 uppercase">Input Produk</h3>
                     <div class="flex gap-2 mb-2">
@@ -245,10 +272,33 @@
                     </div>
                     <textarea id="admPDesc" class="w-full border p-2 rounded text-xs mb-2" placeholder="Deskripsi"></textarea>
                     <input type="hidden" id="admEditIdx" value="-1">
-                    <div class="flex gap-2"><button onclick="saveAdmProd()" class="flex-1 bg-green-500 text-white py-2 rounded text-xs font-bold">Simpan</button><button onclick="resetAdmForm()" class="bg-slate-200 px-3 rounded text-xs">Batal</button></div>
+                    <div class="flex gap-2"><button onclick="saveAdmProd()" class="flex-1 bg-green-500 text-white py-2 rounded text-xs font-bold">Simpan Produk</button><button onclick="resetAdmForm()" class="bg-slate-200 px-3 rounded text-xs">Batal</button></div>
                 </div>
                 <div id="admList" class="space-y-2"></div>
             </div>
+
+            <div id="adminPanelApps" class="space-y-6 hidden">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+                    <h3 class="text-xs font-bold text-blue-500 mb-2 uppercase"><i class="fas fa-rocket mr-1"></i> Input Aplikasi</h3>
+                    <div class="flex gap-2 mb-2">
+                        <div onclick="document.getElementById('admAppImgInp').click()" class="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center cursor-pointer border border-dashed"><img id="admAppImgPrev" class="w-full h-full object-cover rounded-xl hidden"><i id="admAppImgIcon" class="fas fa-cube text-slate-400"></i></div>
+                        <input type="file" id="admAppImgInp" class="hidden" onchange="handleAdmAppImg(this)">
+                        
+                        <div class="flex-1 space-y-2">
+                            <input id="admAppName" class="w-full border p-2 rounded text-xs" placeholder="Nama Aplikasi">
+                            <input id="admAppLink" class="w-full border bg-green-50 p-2 rounded text-xs font-mono text-green-700" placeholder="Link Download (GDrive/Mediafire)">
+                        </div>
+                    </div>
+                    <textarea id="admAppDesc" class="w-full border p-2 rounded text-xs mb-2" placeholder="Deskripsi Singkat Aplikasi"></textarea>
+                    <input type="hidden" id="admAppEditIdx" value="-1">
+                    <div class="flex gap-2">
+                        <button onclick="saveAdmApp()" class="flex-1 bg-blue-600 text-white py-2 rounded text-xs font-bold">Simpan Aplikasi</button>
+                        <button onclick="resetAdmAppForm()" class="bg-slate-200 px-3 rounded text-xs">Batal</button>
+                    </div>
+                </div>
+                <div id="admAppList" class="space-y-2"></div>
+            </div>
+
         </div>
     </div>
 
@@ -273,7 +323,7 @@
       appId: "1:1052259146588:web:a3f4e9c31982cbfa2dff99"
     };
     const STORE_ID="itsbad-store", OWNER_WA="6285236363128", ADMIN_PIN="110603", ADMIN_EMAIL="isbadd84@gmail.com";
-    let db, auth, user, storeData={name:"Itsbad Store",fee:0,products:[]}, cart=JSON.parse(localStorage.getItem('cart'))||[], userProfile={}, tempAdmImg="", currentDetailIdx=-1, activeCategory='all', isGuestMode=false;
+    let db, auth, user, storeData={name:"Itsbad Store",fee:0,products:[],downloads:[]}, cart=JSON.parse(localStorage.getItem('cart'))||[], userProfile={}, tempAdmImg="", tempAdmAppImg="", currentDetailIdx=-1, activeCategory='all', isGuestMode=false;
     toastr.options={"positionClass":"toast-top-center","timeOut":"2000","showMethod":"slideDown","hideMethod":"slideUp","closeButton":false,"progressBar":true};
 
     // --- QRIS UTILITY ---
@@ -337,14 +387,27 @@
     // --- MAIN ---
     window.loginWithGoogle = async () => {
         try { if(!auth)throw 0; const r=await signInWithPopup(auth,new GoogleAuthProvider()); user=r.user; isGuestMode=false; 
-        if(user.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase()){document.getElementById('adminHeaderBtn').classList.remove('hidden');document.getElementById('nav-admin').classList.remove('hidden');}
+        if(user.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase()){/*document.getElementById('adminHeaderBtn').classList.remove('hidden');*/ document.getElementById('nav-admin').classList.remove('hidden');}
         toastr.success("Login Sukses"); document.getElementById('loginModal').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); loadProfile(user.uid); initStore(); 
         if(new URLSearchParams(window.location.search).get('page')==='admin') setTimeout(openAdminLogin,500); } catch(e){toastr.error("Gagal Login");}
     };
     window.continueAsGuest = () => { isGuestMode=true; user={uid:'guest_'+Date.now()}; userProfile={name:'Tamu'}; toastr.success("Mode Tamu"); document.getElementById('loginModal').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); document.getElementById('headerGreeting').innerText="Mode Tamu"; initStore(); };
     window.initStore = async () => {
-        try { const s=await get(child(ref(db),`stores/${STORE_ID}`)); if(s.exists()){ storeData=s.val(); if(!storeData.products)storeData.products=[]; } else await set(ref(db,`stores/${STORE_ID}`),storeData);
-        document.getElementById('shopNameDisplay').innerText=storeData.name; renderCategories(); renderProducts(); updateCartBadge(); } catch(e){}
+        try { 
+            const s=await get(child(ref(db),`stores/${STORE_ID}`)); 
+            if(s.exists()){ 
+                storeData=s.val(); 
+                if(!storeData.products) storeData.products=[]; 
+                if(!storeData.downloads) storeData.downloads=[]; // Init Downloads Array
+            } else {
+                await set(ref(db,`stores/${STORE_ID}`),storeData);
+            }
+            document.getElementById('shopNameDisplay').innerText=storeData.name; 
+            renderCategories(); 
+            renderProducts(); 
+            renderDownloadPage(); // Render Apps
+            updateCartBadge(); 
+        } catch(e){}
     };
     window.renderCategories = () => {
         const cats=['all']; const dl=document.getElementById('catList'); dl.innerHTML="";
@@ -355,7 +418,7 @@
     window.filterCat=(c)=>{activeCategory=c;renderCategories();renderProducts();};
     window.filterProducts=()=>{renderProducts(document.getElementById('searchInput').value.toLowerCase());};
     
-    // --- RENDER PRODUCTS UPDATED (Stok Luar & Bintang 5) ---
+    // --- RENDER PRODUCTS ---
     window.renderProducts=(q="")=>{
         const g=document.getElementById('productGrid'); g.innerHTML="";
         let f=storeData.products; if(activeCategory!=='all')f=f.filter(p=>(p.category||'Umum')===activeCategory); if(q)f=f.filter(p=>p.name.toLowerCase().includes(q));
@@ -397,6 +460,36 @@
                     </div>
                 </div>
             </div>`;
+        });
+    };
+
+    // --- RENDER DOWNLOAD PAGE ---
+    window.renderDownloadPage = () => {
+        const list = document.getElementById('appList');
+        list.innerHTML = "";
+        
+        if (!storeData.downloads || storeData.downloads.length === 0) {
+            list.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">Belum ada aplikasi</div>';
+            return;
+        }
+
+        storeData.downloads.forEach(app => {
+            const img = app.icon || `https://placehold.co/100x100/e2e8f0/94a3b8?text=${app.name[0]}`;
+            list.innerHTML += `
+            <div class="app-item flex items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="w-14 h-14 rounded-xl bg-slate-50 mr-4 overflow-hidden border border-slate-100 flex-shrink-0">
+                    <img src="${img}" class="w-full h-full object-cover">
+                </div>
+                <div class="flex-1 mr-2 overflow-hidden">
+                    <h3 class="font-bold text-sm text-slate-800 truncate">${app.name}</h3>
+                    <p class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">${app.desc || "Tidak ada deskripsi"}</p>
+                </div>
+                <a href="${app.link}" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex flex-col items-center">
+                    <i class="fas fa-cloud-download-alt text-sm mb-0.5"></i>
+                    <span>GET</span>
+                </a>
+            </div>
+            `;
         });
     };
     
@@ -457,8 +550,31 @@
     };
     
     // UTILS
-    window.checkAdmin=()=>{if(document.getElementById('adminPin').value===ADMIN_PIN){document.getElementById('adminLoginModal').classList.add('hidden');document.getElementById('adminModal').classList.remove('hidden');document.getElementById('admStoreName').value=storeData.name;document.getElementById('admFee').value=storeData.fee;document.getElementById('admQris').value=storeData.qris;renderAdmList();}else toastr.error("PIN Salah");};
+    window.checkAdmin=()=>{if(document.getElementById('adminPin').value===ADMIN_PIN){document.getElementById('adminLoginModal').classList.add('hidden');document.getElementById('adminModal').classList.remove('hidden');document.getElementById('admStoreName').value=storeData.name;document.getElementById('admFee').value=storeData.fee;document.getElementById('admQris').value=storeData.qris;renderAdmList(); renderAdmAppList();}else toastr.error("PIN Salah");};
     
+    // --- ADMIN TABS CONTROL ---
+    window.switchAdminTab = (tab) => {
+        const prodPanel = document.getElementById('adminPanelProducts');
+        const appPanel = document.getElementById('adminPanelApps');
+        const tabProd = document.getElementById('tabAdmProd');
+        const tabApp = document.getElementById('tabAdmApp');
+
+        if (tab === 'products') {
+            prodPanel.classList.remove('hidden');
+            appPanel.classList.add('hidden');
+            tabProd.className = "px-3 py-1 bg-blue-600 text-white text-xs rounded-lg transition";
+            tabApp.className = "px-3 py-1 bg-slate-200 text-slate-600 text-xs rounded-lg transition";
+            renderAdmList();
+        } else {
+            prodPanel.classList.add('hidden');
+            appPanel.classList.remove('hidden');
+            tabProd.className = "px-3 py-1 bg-slate-200 text-slate-600 text-xs rounded-lg transition";
+            tabApp.className = "px-3 py-1 bg-blue-600 text-white text-xs rounded-lg transition";
+            renderAdmAppList();
+        }
+    }
+
+    // --- ADMIN PRODUCT LIST ---
     window.renderAdmList = () => {
         const l = document.getElementById('admList');
         l.innerHTML = "";
@@ -482,6 +598,30 @@
             </div>`;
         });
     };
+
+    // --- ADMIN APP LIST (NEW) ---
+    window.renderAdmAppList = () => {
+        const l = document.getElementById('admAppList');
+        l.innerHTML = "";
+        if(!storeData.downloads) storeData.downloads = [];
+        
+        storeData.downloads.forEach((app, i) => {
+             l.innerHTML += `
+            <div class="flex justify-between items-center bg-white p-3 text-xs border border-blue-100 rounded-lg mb-2">
+                <div class="flex items-center gap-2 flex-1 overflow-hidden">
+                    <img src="${app.icon || 'https://placehold.co/50'}" class="w-8 h-8 rounded bg-slate-100 object-cover">
+                    <div class="truncate">
+                        <b class="text-slate-800">${app.name}</b><br>
+                        <span class="text-slate-400 text-[10px] truncate block">${app.link}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button onclick="editAdmApp(${i})" class="text-blue-500 w-6 h-6 hover:bg-blue-50 rounded flex items-center justify-center"><i class="fas fa-edit"></i></button>
+                    <button onclick="delAdmApp(${i})" class="text-red-500 w-6 h-6 hover:bg-red-50 rounded flex items-center justify-center"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+        });
+    }
 
     window.handleQrisUpload=(input)=>{const f=input.files[0];if(f){const r=new FileReader();r.onload=(e)=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');c.width=i.width;c.height=i.height;c.getContext('2d').drawImage(i,0,0);try{const code=jsQR(c.getContext('2d').getImageData(0,0,c.width,c.height).data,c.width,c.height);if(code)document.getElementById('admQris').value=code.data;}catch(e){}};i.src=e.target.result;};r.readAsDataURL(f);}};
     
@@ -517,6 +657,17 @@
         openCart:()=>{switchTab('cart');renderCartList();document.getElementById('cartModal').classList.remove('hidden');},
         closeCart:()=>{document.getElementById('cartModal').classList.add('hidden');switchTab('home');},
         closePayment:()=>{document.getElementById('paymentModal').classList.add('hidden');},
+
+        // --- NAVIGATION DOWNLOAD PAGE ---
+        openDownloadPage: () => {
+            // Hide Home & Others
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('searchBar').classList.add('hidden');
+            document.getElementById('downloadPage').classList.remove('hidden');
+            // Reset Tabs
+            document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+            renderDownloadPage();
+        },
 
         moveProd: async (i, dir) => {
             const arr = storeData.products;
@@ -579,12 +730,14 @@
         openAdminLogin:()=>{if(!user||user.email?.toLowerCase()!==ADMIN_EMAIL.toLowerCase()){toastr.error("Akses Ditolak");return;}document.getElementById('adminLoginModal').classList.remove('hidden');},
         closeAdminLogin:()=>{document.getElementById('adminLoginModal').classList.add('hidden');},
         closeAdminPanel:()=>{document.getElementById('adminModal').classList.add('hidden');},
+        
+        // --- ADMIN PRODUK CRUD ---
         editAdm:(i)=>{
             const p=storeData.products[i];
             document.getElementById('admPName').value=p.name;
             document.getElementById('admPPrice').value=p.price;
             document.getElementById('admPStock').value=p.stock;
-            document.getElementById('admPSold').value=p.sold || 0; // Populate Terjual
+            document.getElementById('admPSold').value=p.sold || 0;
             document.getElementById('admPDesc').value=p.desc;
             document.getElementById('admPCat').value=p.category;
             document.getElementById('admEditIdx').value=i;
@@ -594,7 +747,7 @@
                 document.getElementById('admImgPrev').classList.remove('hidden');
             }
         },
-        delAdm:async(i)=>{if(confirm('Hapus?')){storeData.products.splice(i,1);await update(ref(db,`stores/${STORE_ID}`),storeData);renderAdmList();renderProducts();}},
+        delAdm:async(i)=>{if(confirm('Hapus Produk?')){storeData.products.splice(i,1);await update(ref(db,`stores/${STORE_ID}`),storeData);renderAdmList();renderProducts();}},
         
         saveAdmProd:async()=>{
             const i=parseInt(document.getElementById('admEditIdx').value);
@@ -603,7 +756,7 @@
                 category:document.getElementById('admPCat').value,
                 price:document.getElementById('admPPrice').value,
                 stock:document.getElementById('admPStock').value,
-                sold:document.getElementById('admPSold').value || 0, // Save Terjual
+                sold:document.getElementById('admPSold').value || 0,
                 desc:document.getElementById('admPDesc').value,
                 image:tempAdmImg||(i>-1?storeData.products[i].image:"")
             };
@@ -614,13 +767,81 @@
         resetAdmForm:()=>{
             document.getElementById('admPName').value="";
             document.getElementById('admEditIdx').value="-1";
-            document.getElementById('admPSold').value=""; // Reset input terjual
+            document.getElementById('admPSold').value="";
             tempAdmImg="";
             document.getElementById('admImgPrev').classList.add('hidden');
         },
         handleAdmImg:(input)=>{const f=input.files[0];if(f){const r=new FileReader();r.onload=(e)=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');let w=i.width,h=i.height;if(w>300){h=(h*300)/w;w=300;}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);tempAdmImg=c.toDataURL('image/jpeg',0.7);document.getElementById('admImgPrev').src=tempAdmImg;document.getElementById('admImgPrev').classList.remove('hidden');};i.src=e.target.result;};r.readAsDataURL(f);}},
+
+        // --- ADMIN APLIKASI (DOWNLOAD) CRUD ---
+        handleAdmAppImg:(input)=>{const f=input.files[0];if(f){const r=new FileReader();r.onload=(e)=>{const i=new Image();i.onload=()=>{const c=document.createElement('canvas');let w=i.width,h=i.height;if(w>150){h=(h*150)/w;w=150;}c.width=w;c.height=h;c.getContext('2d').drawImage(i,0,0,w,h);tempAdmAppImg=c.toDataURL('image/png',0.7);document.getElementById('admAppImgPrev').src=tempAdmAppImg;document.getElementById('admAppImgPrev').classList.remove('hidden');};i.src=e.target.result;};r.readAsDataURL(f);}},
+        
+        saveAdmApp:async()=>{
+            if(!storeData.downloads) storeData.downloads = [];
+            const i=parseInt(document.getElementById('admAppEditIdx').value);
+            const a={
+                name:document.getElementById('admAppName').value,
+                link:document.getElementById('admAppLink').value,
+                desc:document.getElementById('admAppDesc').value,
+                icon:tempAdmAppImg||(i>-1?storeData.downloads[i].icon:"")
+            };
+            if(i>-1) storeData.downloads[i]=a; else storeData.downloads.push(a);
+            await update(ref(db,`stores/${STORE_ID}`),storeData);
+            resetAdmAppForm(); renderAdmAppList(); renderDownloadPage();
+            toastr.success("Aplikasi Disimpan");
+        },
+
+        editAdmApp:(i)=>{
+            const a = storeData.downloads[i];
+            document.getElementById('admAppName').value = a.name;
+            document.getElementById('admAppLink').value = a.link;
+            document.getElementById('admAppDesc').value = a.desc;
+            document.getElementById('admAppEditIdx').value = i;
+            if(a.icon){
+                tempAdmAppImg = a.icon;
+                document.getElementById('admAppImgPrev').src = a.icon;
+                document.getElementById('admAppImgPrev').classList.remove('hidden');
+            }
+        },
+
+        delAdmApp:async(i)=>{
+            if(confirm('Hapus Aplikasi ini?')){
+                storeData.downloads.splice(i,1);
+                await update(ref(db,`stores/${STORE_ID}`),storeData);
+                renderAdmAppList(); renderDownloadPage();
+            }
+        },
+
+        resetAdmAppForm:()=>{
+            document.getElementById('admAppName').value = "";
+            document.getElementById('admAppLink').value = "";
+            document.getElementById('admAppDesc').value = "";
+            document.getElementById('admAppEditIdx').value = "-1";
+            tempAdmAppImg = "";
+            document.getElementById('admAppImgPrev').classList.add('hidden');
+        },
+
         saveAdmSettings:async()=>{storeData.name=document.getElementById('admStoreName').value;storeData.fee=document.getElementById('admFee').value;storeData.qris=document.getElementById('admQris').value;await update(ref(db,`stores/${STORE_ID}`),storeData);toastr.success("Saved");},
-        switchTab:(t)=>{document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));document.getElementById(`nav-${t}`).classList.add('active');},
+        
+        switchTab:(t)=>{
+            document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+            document.getElementById(`nav-${t}`).classList.add('active');
+            
+            // Logic Halaman
+            const home = document.getElementById('homePage');
+            const down = document.getElementById('downloadPage');
+            const search = document.getElementById('searchBar');
+
+            if(t === 'home'){
+                home.classList.remove('hidden');
+                down.classList.add('hidden');
+                // search bar logic handled by button
+            } else {
+                // Profile/Cart handled by modal, so background stays home
+                home.classList.remove('hidden');
+                down.classList.add('hidden');
+            }
+        },
         openProfile:()=>{if(!user||isGuestMode)window.showLoginOptions();else{switchTab('profile');document.getElementById('profileModal').classList.remove('hidden');}},
         closeProfile:()=>{document.getElementById('profileModal').classList.add('hidden');switchTab('home');},
         showLoginOptions:()=>{document.getElementById('app').classList.add('hidden');document.getElementById('loginModal').classList.remove('hidden');},
@@ -630,7 +851,7 @@
         loadProfile:async(uid)=>{const s=await get(child(ref(db),`users/${uid}`));if(s.exists())userProfile=s.val();else userProfile={name:user.displayName,email:user.email};document.getElementById('headerGreeting').innerText=userProfile.name;if(userProfile.avatar){document.getElementById('headerAvatar').src=userProfile.avatar;document.getElementById('profileAvatarEdit').src=userProfile.avatar;}document.getElementById('profName').value=userProfile.name||"";document.getElementById('profPhone').value=userProfile.phone||"";document.getElementById('profAddress').value=userProfile.address||"";const h=await get(child(ref(db),`orders/${uid}`));const hl=document.getElementById('historyList');hl.innerHTML="";if(h.exists())Object.values(h.val()).forEach(o=>hl.innerHTML+=`<div class="p-2 border-b text-xs">${new Date(o.date).toLocaleDateString()} - Rp ${parseInt(o.total).toLocaleString()}</div>`);}
     });
 
-    try{const app=initializeApp(firebaseConfig);db=getDatabase(app);auth=getAuth(app);document.getElementById('pinForm').addEventListener('submit',(e)=>{e.preventDefault();window.checkAdmin();});document.getElementById('togglePin').addEventListener('click',()=>{const i=document.getElementById('adminPin');i.type=i.type==='password'?'text':'password';});onAuthStateChanged(auth,(u)=>{if(u){user=u;isGuestMode=false;if(u.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase()){document.getElementById('adminHeaderBtn').classList.remove('hidden');document.getElementById('nav-admin').classList.remove('hidden');}document.getElementById('loginModal').classList.add('hidden');document.getElementById('app').classList.remove('hidden');loadProfile(u.uid);initStore();if(new URLSearchParams(window.location.search).get('page')==='admin')setTimeout(openAdminLogin,500);}else{document.getElementById('loginModal').classList.remove('hidden');}});}catch(e){toastr.error("Init Error");}
+    try{const app=initializeApp(firebaseConfig);db=getDatabase(app);auth=getAuth(app);document.getElementById('pinForm').addEventListener('submit',(e)=>{e.preventDefault();window.checkAdmin();});document.getElementById('togglePin').addEventListener('click',()=>{const i=document.getElementById('adminPin');i.type=i.type==='password'?'text':'password';});onAuthStateChanged(auth,(u)=>{if(u){user=u;isGuestMode=false;if(u.email?.toLowerCase()===ADMIN_EMAIL.toLowerCase()){/*document.getElementById('adminHeaderBtn').classList.remove('hidden');*/ document.getElementById('nav-admin').classList.remove('hidden');}document.getElementById('loginModal').classList.add('hidden');document.getElementById('app').classList.remove('hidden');loadProfile(u.uid);initStore();if(new URLSearchParams(window.location.search).get('page')==='admin')setTimeout(openAdminLogin,500);}else{document.getElementById('loginModal').classList.remove('hidden');}});}catch(e){toastr.error("Init Error");}
   </script>
 </body>
 </html>
